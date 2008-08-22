@@ -4,10 +4,13 @@
  * Author:      Peter Ivanov
  * Modified by:
  * Created:     2005/01/13
- * Last modify: 2008-08-22 14:55:20 ivanovp {Time-stamp}
+ * Last modify: 2008-08-22 17:22:37 ivanovp {Time-stamp}
  * Copyright:   (C) Peter Ivanov, 2005
  * Licence:     GPL
  */
+
+#include <algorithm>
+#include <iomanip>
 
 #include "thing.h"
 #include "debug.h"
@@ -15,7 +18,6 @@
 #include "keyword.h"
 #include "split.h"
 #include "trans.h"
-#include <algorithm>
 
 const std::string CThing::K_NAME         = "sName";
 const std::string CThing::K_NOUN         = "iNoun";         // koznev/tulajdonnev
@@ -558,7 +560,7 @@ float CThing::get_fparam (const std::string& variable)
 
 int CThing::get_stat (int stat_type)
 {
-    if (stat_keyword_vector.size () <= stat_type)
+    if (stat_keyword_vector.size () <= static_cast<unsigned int> (stat_type))
     {
         std::ostringstream os;
         os << __INFO__ << __PRETTY_FUNCTION__ << " invalid stat type!!!";
@@ -635,51 +637,61 @@ CThing* CThing::find (const std::string& id, CThingList& thinglist)
 std::string CThing::info (int verbose_level)
 {
     std::ostringstream os;
-    os << "---[ CThing info ]------------------------------------------------------------" << std::endl;
-    os << "type: " << get_type () << std::endl;
-    os << "sn: " << get_sn () << std::endl;
-    os << "id: [" << get_id () << "]" << std::endl;
-    if (verbose_level <= 0) return os.str ();
-    os << "name: [" << get_name () << "]" << std::endl;
-    os << "descr: [" << get_descr () << "]" << std::endl;
-    if (verbose_level <= 1) return os.str ();
-    if (parent)
-        os << "parent: " << parent->get_id () << " (sn: " << parent->get_sn () << ")" << std::endl;
+    if (verbose_level == 0)
+    {
+        os << "type: " << std::left << std::setw (8) << get_type () << " ";
+        os << "sn: " << std::left << std::setw (5) << get_sn () << " ";
+        os << "id: [" << get_id () << "]";
+        os << std::endl;
+    }
     else
-        os << "parent: NONE" << std::endl;
-    os << "childs: " << childs.size () << " thing(s)" << std::endl;
-    if (verbose_level <= 2) return os.str ();
-    if (verbose_level >= 3)
     {
-        for (CThingListIt i = childs.begin (); i != childs.end (); i++)
+        os << "---[ CThing info ]------------------------------------------------------------" << std::endl;
+        os << "type: " << get_type () << std::endl;
+        os << "sn: " << get_sn () << std::endl;
+        os << "id: [" << get_id () << "]" << std::endl;
+        if (verbose_level <= 1) return os.str ();
+        os << "name: [" << get_name () << "]" << std::endl;
+        os << "descr: [" << get_descr () << "]" << std::endl;
+        if (verbose_level <= 2) return os.str ();
+        if (parent)
+            os << "parent: " << parent->get_id () << " (sn: " << parent->get_sn () << ")" << std::endl;
+        else
+            os << "parent: NONE" << std::endl;
+        os << "childs: " << childs.size () << " thing(s)" << std::endl;
+        if (verbose_level <= 3) return os.str ();
+        if (verbose_level >= 4)
         {
-            os << "\t" << (*i)->get_id () << " (sn: " << (*i)->get_sn () << ")" << std::endl;
+            for (CThingListIt i = childs.begin (); i != childs.end (); i++)
+            {
+                os << "\t" << (*i)->get_id () << " (sn: " << (*i)->get_sn () << ")" << std::endl;
+            }
         }
-    }
-    os << "sparams: " << sparams.size () << " variable(s)" << std::endl;
-    if (verbose_level >= 4)
-    {
-        for (CThingSParamIt i = sparams.begin (); i != sparams.end (); i++)
+        os << "sparams: " << sparams.size () << " variable(s)" << std::endl;
+        if (verbose_level >= 5)
         {
-            os << "\t" << i->first << " = [" << i->second << "]" << std::endl;
+            for (CThingSParamIt i = sparams.begin (); i != sparams.end (); i++)
+            {
+                os << "\t" << i->first << " = [" << i->second << "]" << std::endl;
+            }
         }
-    }
-    os << "iparams: " << iparams.size () << " variable(s)" << std::endl;
-    if (verbose_level >= 4)
-    {
-        for (CThingIParamIt i = iparams.begin (); i != iparams.end (); i++)
+        os << "iparams: " << iparams.size () << " variable(s)" << std::endl;
+        if (verbose_level >= 5)
         {
-            os << "\t" << i->first << " = " << i->second << std::endl;
+            for (CThingIParamIt i = iparams.begin (); i != iparams.end (); i++)
+            {
+                os << "\t" << i->first << " = " << i->second << std::endl;
+            }
         }
-    }
-    os << "fparams: " << fparams.size () << " variable(s)" << std::endl;
-    if (verbose_level >= 4)
-    {
-        for (CThingFParamIt i = fparams.begin (); i != fparams.end (); i++)
+        os << "fparams: " << fparams.size () << " variable(s)" << std::endl;
+        if (verbose_level >= 5)
         {
-            os.precision (3);
-            os.setf (std::ios_base::fixed, std::ios_base::floatfield);
-            os << "\t" << i->first << " = " << i->second << std::endl;
+            for (CThingFParamIt i = fparams.begin (); i != fparams.end (); i++)
+            {
+                os.precision (3);
+                os.setf (std::ios_base::fixed, std::ios_base::floatfield);
+                os << "\t" << i->first << " = " << i->second << std::endl;
+            }
         }
     }
     return os.str ();
