@@ -1,0 +1,11 @@
+. Random events are not supported in console mode. Calling of 
+  CApp::do_something () is not possible.
++ If compiled with GTKMM option, some items have zero price.
+  Without GTKMM price is fine.
+  Solution: With GTKMM option the atof () works with locale settings. 
+  There is no dot in floating point numbers in hungarian language but
+  there is a comma.
+
+. BUG
++ FIXED
+
