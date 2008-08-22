@@ -4,7 +4,7 @@
  * Author:      Peter Ivanov
  * Modified by:
  * Created:     2005/04/30
- * Last modify: 2008-08-21 10:40:22 ivanovp {Time-stamp}
+ * Last modify: 2008-08-22 20:53:22 ivanovp {Time-stamp}
  * Copyright:   (C) Peter Ivanov, 2005
  * Licence:     GPL
  */
@@ -32,6 +32,8 @@
 #define C_HL            ANSI_YELLOW
 /// Prompt
 #define C_PROMPT        ANSI_YELLOW
+// Color of command in prompt
+#define C_PROMPT_CMD    ANSI_CYAN
 
 #else // GTKMM
 
@@ -53,6 +55,8 @@
 #define C_HL            "\x1B{highlight}"
 // Color of prompt
 #define C_PROMPT        "\x1B{prompt}"
+// Color of command in prompt
+#define C_PROMPT_CMD    "\x1B{pcmd}"
 
 #endif // GKTMM
 

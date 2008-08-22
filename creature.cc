@@ -4,7 +4,7 @@
  * Author:      Peter Ivanov
  * Modified by:
  * Created:     2005/04/13
- * Last modify: 2008-08-22 19:09:43 ivanovp {Time-stamp}
+ * Last modify: 2008-08-22 20:57:25 ivanovp {Time-stamp}
  * Copyright:   (C) Peter Ivanov, 2005
  * Licence:     GPL
  */
@@ -546,10 +546,10 @@ bool CCreature::parser (const std::string& text, signed long from_serial_number)
         }
         else
         {
-            // \todo TODO implement permission checker!
-#warning "TODO: implement permission checker!"
+            // \todo TODO implement permission checking!
+#warning "TODO: implement permission checking!"
             std::ostringstream os;
-            os << __INFO__ << "Permission checker not implemented.";
+            os << __INFO__ << "Permission checking not implemented.";
             Log.error (os.str ());
         }
         if (perm)
@@ -1865,6 +1865,12 @@ void CCreature::cmd_alias (const std::string& cmd, const std::string& params)
                 {
                     alias_map.erase (alias_name);
                     parser_map.erase (alias_name);
+#if (LANG == ENG)
+                    (*ostream) << C_DO << "Alias '" << alias_name << "' has deleted." << C_RST << std::endl;
+#endif
+#if (LANG == HUN)
+                    (*ostream) << C_DO << ",," << alias_name << "'' álnév törölve." << C_RST << std::endl;
+#endif
                 }
                 else
                 {
@@ -2415,8 +2421,8 @@ void CCreature::cmd_info (const std::string& cmd, const std::string& params)
             (*ostream) << " -m or -maps: search in maps." << std::endl;
             (*ostream) << " -c or -creatures: search in creatures." << std::endl;
             (*ostream) << " -i or -items: search in items." << std::endl;
-            (*ostream) << " serial number: search for serial number." << std::endl;
-            (*ostream) << " a-b: search for a range of serial number." << std::endl;
+            (*ostream) << " serial number: search serial number." << std::endl;
+            (*ostream) << " a-b: search range of serial numbers." << std::endl;
             (*ostream) << " name: search for a name." << std::endl;
             (*ostream) << "Example: " << C_CMD << CMD_INFO << " -v 5 player" << C_RST << std::endl;
 #endif
@@ -2490,6 +2496,7 @@ void CCreature::cmd_info (const std::string& cmd, const std::string& params)
             }
             else if (regexNum.Matches (sv[j]))
             {
+                // searching serial number
                 std::string s = regexNum.GetMatch (sv[j], 1);
                 int num = std::strtol (s.c_str (), NULL, 10);
                 for (CThingListIt i = begin; i != end; i++)
@@ -2504,6 +2511,7 @@ void CCreature::cmd_info (const std::string& cmd, const std::string& params)
             }
             else if (regexRange.Matches (sv[j]))
             {
+                // search range of serial numbers
                 std::string s = regexRange.GetMatch (sv[j], 1);
                 int min = std::strtol (s.c_str (), NULL, 10);
                 s = regexRange.GetMatch (sv[j], 2);
