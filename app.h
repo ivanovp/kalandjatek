@@ -4,7 +4,7 @@
  * Author:      Peter Ivanov
  * Modified by:
  * Created:     2005/04/14
- * Last modify: 2008-08-21 10:40:01 ivanovp {Time-stamp}
+ * Last modify: 2008-08-22 11:18:36 ivanovp {Time-stamp}
  * Copyright:   (C) Peter Ivanov, 2005
  * Licence:     GPL
  */
@@ -119,17 +119,6 @@ protected:
 #endif
 
 public:
-    /// Initializing application data
-    CApp ();
-    /// Destroying application data
-    virtual ~CApp ();
-#ifdef GTKMM
-    void hide ();
-#else
-    /// Run the application.
-    void run ();
-#endif
-
     static const std::string ABOUT;
     static const char* DEFAULT_FONT;
     static const char* DEFAULT_ITEM_CFG;
@@ -146,6 +135,29 @@ public:
     static const char* PROG_VERSION_STR;
     static const int PROG_VERSION;
     static const std::string PROG_HEADER;
+    // CApp keywords (kj.cfg)
+    static const char* K_WINDOW_X;
+    static const char* K_WINDOW_Y;
+    static const char* K_WINDOW_W;
+    static const char* K_WINDOW_H;
+    static const char* K_AUTO_SCROLL;
+    static const char* K_ITEM_CFG;
+    static const char* K_CREATURE_CFG;
+    static const char* K_MAP_CFG;
+    static const char* K_PLAYER_ID;
+    static const char* K_FONT;
+    static const char* K_ALIASES;
+
+    /// Initializing application data
+    CApp ();
+    /// Destroying application data
+    virtual ~CApp ();
+#ifdef GTKMM
+    void hide ();
+#else
+    /// Run the application.
+    void run ();
+#endif
 };
 
 #endif // __INCLUDE_APP_H

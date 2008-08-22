@@ -4,7 +4,7 @@
  * Author:      Peter Ivanov
  * Modified by:
  * Created:     2005/01/13
- * Last modify: 2008-08-22 09:44:19 ivanovp {Time-stamp}
+ * Last modify: 2008-08-22 11:40:36 ivanovp {Time-stamp}
  * Copyright:   (C) Peter Ivanov, 2005
  * Licence:     GPL
  */
@@ -17,30 +17,31 @@
 #include "trans.h"
 #include <algorithm>
 
-const char* CThing::K_NAME         = "sName";
-const char* CThing::K_DESCR        = "sDescr";
-const char* CThing::K_ALTNAME      = "sAltName";
-const char* CThing::K_RAGOK        = "sRagok";        // hungarian endings
-const char* CThing::K_PLURAL       = "sPlural";       // többes szám
-const char* CThing::K_CHILDS       = "sChilds";       // possessions
-const char* CThing::K_BODY         = "iBody";
-const char* CThing::K_STRENGTH     = "iStrength";
-const char* CThing::K_DEXTERITY    = "iDexterity";
-const char* CThing::K_PERCEPTION   = "iPerception";
-const char* CThing::K_INTELLIGENCE = "iIntelligence";
-const char* CThing::K_WILLPOWER    = "iWillpower";
-const char* CThing::K_CHARISMA     = "iCharisma";
-const char* CThing::K_BDY          = K_BODY;
-const char* CThing::K_STR          = K_STRENGTH;
-const char* CThing::K_DEX          = K_DEXTERITY;
-const char* CThing::K_PER          = K_PERCEPTION;
-const char* CThing::K_INT          = K_INTELLIGENCE;
-const char* CThing::K_WIL          = K_WILLPOWER;
-const char* CThing::K_CHA          = K_CHARISMA;
-const char* CThing::K_HP           = "iHP";
-const char* CThing::K_MP           = "iMP";
-const char* CThing::K_ATTACK       = "iAttack";
-const char* CThing::K_DEFENSE      = "iDefense";
+const std::string CThing::K_NAME         = "sName";
+const std::string CThing::K_NOUN         = "iNoun";         // koznev/tulajdonnev
+const std::string CThing::K_DESCR        = "sDescr";
+const std::string CThing::K_ALTNAME      = "sAltName";
+const std::string CThing::K_RAGOK        = "sRagok";        // hungarian endings
+const std::string CThing::K_PLURAL       = "sPlural";       // többes szám
+const std::string CThing::K_CHILDS       = "sChilds";       // possessions
+const std::string CThing::K_BODY         = "iBody";
+const std::string CThing::K_STRENGTH     = "iStrength";
+const std::string CThing::K_DEXTERITY    = "iDexterity";
+const std::string CThing::K_PERCEPTION   = "iPerception";
+const std::string CThing::K_INTELLIGENCE = "iIntelligence";
+const std::string CThing::K_WILLPOWER    = "iWillpower";
+const std::string CThing::K_CHARISMA     = "iCharisma";
+const std::string CThing::K_BDY          = K_BODY;
+const std::string CThing::K_STR          = K_STRENGTH;
+const std::string CThing::K_DEX          = K_DEXTERITY;
+const std::string CThing::K_PER          = K_PERCEPTION;
+const std::string CThing::K_INT          = K_INTELLIGENCE;
+const std::string CThing::K_WIL          = K_WILLPOWER;
+const std::string CThing::K_CHA          = K_CHARISMA;
+const std::string CThing::K_HP           = "iHP";
+const std::string CThing::K_MP           = "iMP";
+const std::string CThing::K_ATTACK       = "iAttack";
+const std::string CThing::K_DEFENSE      = "iDefense";
 
 signed long CThing::last_sn = 0; ///< Last used serial number.
 

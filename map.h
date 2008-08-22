@@ -4,7 +4,7 @@
  * Author:      Peter Ivanov
  * Modified by:
  * Created:     2005/04/13
- * Last modify: 2008-08-21 10:42:54 ivanovp {Time-stamp}
+ * Last modify: 2008-08-22 11:40:18 ivanovp {Time-stamp}
  * Copyright:   (C) Peter Ivanov, 2005
  * Licence:     GPL
  */
@@ -26,6 +26,7 @@ class CMap: public CThing
 private:
     void init ();
 public:
+    static const std::string K_EXITS;
     static CThingList global_maplist;
 
 public:

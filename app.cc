@@ -4,7 +4,7 @@
  * Author:      Peter Ivanov
  * Modified by:
  * Created:     2005/04/14
- * Last modify: 2008-08-21 14:26:03 ivanovp {Time-stamp}
+ * Last modify: 2008-08-22 11:17:44 ivanovp {Time-stamp}
  * Copyright:   (C) Peter Ivanov, 2005
  * Licence:     GPL
  */
@@ -46,6 +46,18 @@ const std::string CApp::ABOUT = PROG_HEADER + "\n" "Licence: GPL\n" "Author: " +
 #if (LANG == HUN) 
 const std::string CApp::ABOUT = PROG_HEADER + "\n" "Licensz: GPL\n" "Szerzõ: " + AUTHOR + "\n" "Honlap: " + HOMEPAGE;
 #endif
+
+const char* CApp::K_WINDOW_X     = "iWindowX";
+const char* CApp::K_WINDOW_Y     = "iWindowY";
+const char* CApp::K_WINDOW_W     = "iWindowW";
+const char* CApp::K_WINDOW_H     = "iWindowH";
+const char* CApp::K_AUTO_SCROLL  = "iAutoScroll";
+const char* CApp::K_ITEM_CFG     = "sItemCfg";
+const char* CApp::K_CREATURE_CFG = "sCreatureCfg";
+const char* CApp::K_MAP_CFG      = "sMapCfg";
+const char* CApp::K_PLAYER_ID    = "sPlayerID";
+const char* CApp::K_FONT         = "sFont";
+const char* CApp::K_ALIASES      = "sAliases";      // parancs álnevek
 
 /// Main logger.
 log4cpp::Category& Log = log4cpp::Category::getInstance ("kj");
