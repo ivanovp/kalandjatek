@@ -4,7 +4,7 @@
  * Author:      Peter Ivanov
  * Modified by:
  * Created:     2005/04/14
- * Last modify: 2008-08-22 14:24:22 ivanovp {Time-stamp}
+ * Last modify: 2008-08-22 20:54:57 ivanovp {Time-stamp}
  * Copyright:   (C) Peter Ivanov, 2005
  * Licence:     GPL
  */
@@ -42,10 +42,10 @@ const std::string CApp::PROG_HEADER = std::string (PROG_NAME) + " v" + PROG_VERS
 
 #if (LANG == ENG) 
 const std::string CApp::ABOUT = PROG_HEADER + "\n" "Licence: GPL\n" "Author: " + AUTHOR + "\n" "Homepage: " + HOMEPAGE;
-#endif
+#endif // (LANG == ENG)
 #if (LANG == HUN) 
 const std::string CApp::ABOUT = PROG_HEADER + "\n" "Licensz: GPL\n" "Szerzõ: " + AUTHOR + "\n" "Honlap: " + HOMEPAGE;
-#endif
+#endif // (LANG == HUN)
 
 const char* CApp::K_WINDOW_X     = "iWindowX";
 const char* CApp::K_WINDOW_Y     = "iWindowY";
@@ -118,36 +118,36 @@ void CApp::init_log ()
 CApp::CApp ()
 #ifdef GTKMM
     : Gtk::Window ()
-#endif
+#endif // GKTMM
 {
     init_log ();
     Log.info (PROG_HEADER);
 #if (LANG == ENG)
     Log.info (" * Starting...");
-#endif
+#endif // (LANG == ENG)
 #if (LANG == HUN)
     Log.info (" * Indítás...");
-#endif
+#endif // (LANG == HUN)
     load_config ();
     init_universe ();
 #ifdef GTKMM
     init_window ();
-#endif
+#endif // GKTMM
 }
 
 CApp::~CApp ()
 {
 #ifdef GTKMM
     delete_window ();
-#endif
+#endif // GKTMM
     delete_universe ();
     save_config ();
 #if (LANG == ENG)
     Log.info (" * Exiting...");
-#endif
+#endif // (LANG == ENG)
 #if (LANG == HUN)
     Log.info (" * Kilépés...");
-#endif
+#endif // (LANG == HUN)
 }
 
 void CApp::init_universe ()
@@ -197,10 +197,10 @@ void CApp::init_universe ()
     {
 #if (LANG == ENG)
         Log.fatal (std::string ("'" + player_id + "' identifier not found! Exiting.").c_str ());
-#endif
+#endif // (LANG == ENG)
 #if (LANG == HUN)
         Log.fatal (std::string ("'" + player_id + "' azonosító nem létezik! Kilépek.").c_str ());
-#endif
+#endif // (LANG == HUN)
         exit (-1);
     }
     if (smap.find (K_ALIASES) == smap.end ())
@@ -208,11 +208,11 @@ void CApp::init_universe ()
         smap[K_ALIASES] = DEFAULT_ALIASES;
     }
     std::string aliases = smap[K_ALIASES];
+    player->set_aliases (aliases);
 #ifdef GTKMM
     player->set_ostream (&player_os);
     player->set_spectator (true);
-#endif
-    player->set_aliases (aliases);
+#endif // GKTMM
 #ifdef __DEBUG__
     const std::string PLAYER2_ID = "farkas";
     player2 = dynamic_cast<CCreature*> (finder->find (PLAYER2_ID, *universe));
@@ -220,18 +220,18 @@ void CApp::init_universe ()
     {
 #if (LANG == ENG)
         Log.fatal ("'" + PLAYER2_ID + "' identifier not found! Exiting.");
-#endif
+#endif // (LANG == ENG)
 #if (LANG == HUN)
         Log.fatal ("'" + PLAYER2_ID + "' azonosító nem létezik! Kilépek.");
-#endif
+#endif // (LANG == HUN)
         exit (-1);
     }
+    player2->set_aliases (aliases);
 #ifdef GTKMM
     player2->set_ostream (&player2_os);
     player2->set_spectator (true);
-#endif
-    player2->set_aliases (aliases);
-#endif
+#endif // GKTMM
+#endif  // __DEBUG__
     // Initialize random number generator.
     srand (static_cast<unsigned> (time (0)));
 }
@@ -527,6 +527,10 @@ void CApp::init_window ()
     tag = Gtk::TextBuffer::Tag::create ("command");
     tag->property_foreground () = "DarkTurquoise";
     tag_table->add (tag);
+    
+    tag = Gtk::TextBuffer::Tag::create ("pcmd");
+    tag->property_foreground () = "Turquoise";
+    tag_table->add (tag);
 
     tag = Gtk::TextBuffer::Tag::create ("error");
     tag->property_foreground () = "OrangeRed";
@@ -713,41 +717,49 @@ Gtk::TextIter CApp::insert (const Gtk::TextIter& pos, const Glib::ustring& text)
 
 void CApp::on_quit ()
 {
-    //std::cout << __INFO__ << __FUNCTION__ << std::endl;
     hide ();
 }
 
 void CApp::on_entry ()
 {
-    //std::cout << __INFO__ << __FUNCTION__ << std::endl;
-    //std::cout << entry->get_text () << std::endl;
     Glib::ustring buf = entry->get_text ();
-    insert (text_buffer->end (), std::string (C_PROMPT) + "$ " + C_RST + buf + "\n");
+    insert (text_buffer->end (), std::string (C_PROMPT) + "$ " + C_RST + C_PROMPT_CMD + buf + C_RST + "\n");
 #ifdef __DEBUG__
     if (buf[0] == '!')
-        insert (text_buffer->end (), Glib::convert (show_universe (buf[1] >= '0' && buf[1] <= '9' ? buf[1] - '0' : 2), "utf8", "iso-8859-2"));
-    else
-    if (buf[0] == '@')
-        insert (text_buffer->end (), Glib::convert (player->info (buf[1] >= '0' && buf[1] <= '9' ? buf[1] - '0' : 4), "utf8", "iso-8859-2"));
-    else
-    if (buf[0] == ':')
+    {
+        insert (text_buffer->end (), 
+                Glib::convert (
+                    show_universe (buf[1] >= '0' && buf[1] <= '9' ? buf[1] - '0' : 2), "utf8", "iso-8859-2")
+                );
+    }
+    else if (buf[0] == '@')
+    {
+        insert (text_buffer->end (), 
+                Glib::convert (
+                    player->info (buf[1] >= '0' && buf[1] <= '9' ? buf[1] - '0' : 4), "utf8", "iso-8859-2")
+                );
+    }
+    else if (buf[0] == ':')
     {
         buf = buf.substr (1, buf.size () - 1);
         player2->parser (Glib::convert (buf, "iso-8859-2", "utf8"));
     }
     else
-#endif
+#endif  // __DEBUG__
     if (buf == "q")
+    {
         hide ();
+    }
     else
+    {
         player->parser (Glib::convert (buf, "iso-8859-2", "utf8"));
+    }
     update_text_buffer ();
     entry->set_text ("");
 }
 
 void CApp::on_textbuf ()
 {
-    //std::cout << __INFO__ << __FUNCTION__ << std::endl;
     // Scrolling to the end of the buffer.
     // We must create a mark.
     if (imap[K_AUTO_SCROLL])
@@ -787,14 +799,14 @@ void CApp::on_not_implemented ()
     Gtk::MessageDialog *msg;
 #if (LANG == ENG)
     msg = new Gtk::MessageDialog (*this, "Sorry. Not implemented.");
-#endif
+#endif // (LANG == ENG)
 #if (LANG == HUN)
     msg = new Gtk::MessageDialog (*this, "Sajnos mÃ©g nincs implementÃ¡lva.");
-#endif
+#endif // (LANG == HUN)
     msg->run ();
     delete msg;
 }
-#endif
+#endif // GKTMM
 
 bool CApp::do_something ()
 {
@@ -816,7 +828,7 @@ void CApp::run ()
 #ifdef __DEBUG__
     player2->set_ostream (&player2_os);
     player2->set_spectator (true);
-#endif
+#endif  // __DEBUG__
     
     player->parser (CCreature::CMD_LOOK);
 
@@ -828,6 +840,7 @@ void CApp::run ()
         // writing prompt
         std::cout << C_PROMPT << "$ " << C_RST;
         std::cout.flush ();
+        std::cout << C_CMD;
         /*input.clear ();
         char c = 0;
         do 
@@ -844,16 +857,17 @@ void CApp::run ()
         } while (c != '\n');*/
         // getting a line from standard input
         std::cin.getline (buf, sizeof (buf));
+        std::cout << C_RST;
         if ((std::string) buf == "q" || std::cin.eof ())
         //if (input == "q" || std::cin.eof ())
         {
             // exiting if end of file or typed 'q'
 #if (LANG == ENG)
             std::cout << "Bye." << std::endl;
-#endif
+#endif // (LANG == ENG)
 #if (LANG == HUN)
             std::cout << "Csá." << std::endl;
-#endif
+#endif // (LANG == HUN)
             end = true;
         }
         else
@@ -874,7 +888,7 @@ void CApp::run ()
                 player2->parser (buf);
             }
             else
-#endif
+#endif  // __DEBUG__
             // otherwise forwarding command to parser
             player->parser (buf);
 #ifdef __DEBUG__
@@ -889,11 +903,11 @@ void CApp::run ()
                 std::cout << "######" << std::endl;
                 player2_os.str ("");
             }
-#endif
+#endif  // __DEBUG__
         }
     } while (!end);
 }
-#endif
+#endif // !GKTMM
 
 std::string CApp::show_universe (int verbose_level)
 {
