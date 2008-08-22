@@ -1,4 +1,4 @@
-#summary Kalandjatek.
+#summary Overview of kalandjatek.
 
 = Introduction =
 
