@@ -4,7 +4,7 @@
  * Author:      Peter Ivanov
  * Modified by:
  * Created:     2005/04/13
- * Last modify: 2008-08-22 11:40:18 ivanovp {Time-stamp}
+ * Last modify: 2008-08-22 13:51:58 ivanovp {Time-stamp}
  * Copyright:   (C) Peter Ivanov, 2005
  * Licence:     GPL
  */
@@ -25,6 +25,7 @@ class CMap: public CThing
 {
 private:
     void init ();
+
 public:
     static const std::string K_EXITS;
     static CThingList global_maplist;
@@ -51,12 +52,6 @@ public:
      * Calling periodical by parent.
      */
     virtual void do_something ();
-
-    /**
-     * Getting type of thing.
-     * \return Return the type of this thing.
-     */
-    virtual std::string get_type () { return "map"; };
 
     /**
      * Copy self.

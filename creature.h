@@ -4,7 +4,7 @@
  * Author:      Peter Ivanov
  * Modified by:
  * Created:     2005/04/13
- * Last modify: 2008-08-22 11:35:24 ivanovp {Time-stamp}
+ * Last modify: 2008-08-22 13:51:29 ivanovp {Time-stamp}
  * Copyright:   (C) Peter Ivanov, 2005
  * Licence:     GPL
  */
@@ -17,6 +17,7 @@
 #define __INCLUDE_CREATURE_H
 
 #include <string>
+#include "nullstream.h"
 #include "thing.h"
 #include "lang.h"
 #include "functor.h"
@@ -68,14 +69,16 @@ typedef CStringMap::iterator CStringMapIt;
 class CCreature: public CThing
 {
 private:
-    /// Is it spectator or not? (Player).
+    /// Is it spectator or not? (The Player is a spectator.)
     bool spectator;
     /// Command string and function map for parser.
     CFunctorMap parser_map;
     /// String map for aliases.
     CStringMap alias_map;
-    /// Communication stream. Used only if this creature is a spectator.
+    /// Communication stream. Useful only if this creature is a spectator.
     std::ostream *ostream;
+    /// The default output stream
+    static NullStream nullstream;
     
     void init ();
 
@@ -178,7 +181,7 @@ public:
     virtual std::string get_shape ();
     
     /**
-     * Draw the color of creature.
+     * Get the color of creature.
      * \return The color of creature.
      */
     virtual int get_color ();
@@ -293,47 +296,31 @@ public:
      */
     float get_loadability ();
 
-#if 0
-    /**
-     * Calculate hit points of creature.
-     * \param current True: current hit points. False: maximum mana points.
-     * \return Calculated hit points.
-     */
-    int get_hp (bool current = true);
-
-    /**
-     * Calculate mana points of creature.
-     * \param current True: current mana points. False: maximum mana points.
-     * \return Calculated mana points.
-     */
-    int get_mp (bool current = true);
-
-    /**
-     * Calculate attack points of creature.
-     * \return Calculated attack points.
-     */
-    int get_attack ();
-    
-    /**
-     * Calculate defense points of creature.
-     * \return Calculated defense points.
-     */
-    int get_defense ();
-#endif
     /**
      * Calculate specified statistic of creature.
      */
     virtual int get_stat (int stat_type);
 
+    /**
+     * Returns true if the creature is male.
+     *
+     * @return True: if it is a male.
+     */
     bool isMale () { return get_iparam (K_SEX) == 0; };
+    
+    /**
+     * Returns true if the creature is female.
+     *
+     * @return True: if it is a female.
+     */
     bool isFemale () { return get_iparam (K_SEX) == 1; };
-    bool doesRandomMove () { return get_iparam (K_RANDOMMOVE) == 1; };
 
     /**
-     * Get type of thing.
-     * \return Return the type of this thing.
+     * Returns true if the creature allowed to move around.
+     *
+     * @return True: if it can move.
      */
-    virtual std::string get_type () { return "creature"; };
+    bool doesRandomMove () { return get_iparam (K_RANDOMMOVE) == 1; };
 
     /**
      * Copy self.

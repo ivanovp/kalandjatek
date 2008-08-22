@@ -4,7 +4,7 @@
  * Author:      Peter Ivanov
  * Modified by:
  * Created:     2005/04/13
- * Last modify: 2008-08-22 11:38:49 ivanovp {Time-stamp}
+ * Last modify: 2008-08-22 13:44:35 ivanovp {Time-stamp}
  * Copyright:   (C) Peter Ivanov, 2005
  * Licence:     GPL
  */
@@ -88,7 +88,7 @@ public:
      * \param price If you want get another price. -1 means get price of this item.
      * \return Return the price of this item or given price.
      */
-    virtual std::string get_price_str (float price = -1);
+    std::string get_price_str (float price = -1);
 
     /**
      * Getting type of thing.

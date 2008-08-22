@@ -4,7 +4,7 @@
  * Author:      Peter Ivanov
  * Modified by:
  * Created:     2005/01/13
- * Last modify: 2008-08-22 11:40:44 ivanovp {Time-stamp}
+ * Last modify: 2008-08-22 13:53:40 ivanovp {Time-stamp}
  * Copyright:   (C) Peter Ivanov, 2005
  * Licence:     GPL
  */
@@ -48,6 +48,9 @@ private:
     std::string id;             ///< Internal identifier (example: tree).
     
     void init ();
+
+protected:
+    std::string type;           ///< type of CThing: "thing"
 
 public:
     static const std::string K_NAME;
@@ -290,7 +293,7 @@ public:
      * Getting type of thing.
      * \return Return the type of this thing.
      */
-    virtual std::string get_type () { return "thing"; };
+    std::string get_type () { return type; };
 
     /**
      * Copy self.

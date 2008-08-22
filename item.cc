@@ -4,7 +4,7 @@
  * Author:      Peter Ivanov
  * Modified by:
  * Created:     2005/04/13
- * Last modify: 2008-08-22 11:38:35 ivanovp {Time-stamp}
+ * Last modify: 2008-08-22 13:50:53 ivanovp {Time-stamp}
  * Copyright:   (C) Peter Ivanov, 2005
  * Licence:     GPL
  */
@@ -44,6 +44,7 @@ CThingList CItem::global_itemlist;
 
 void CItem::init ()
 {
+    type = "item";
     global_itemlist.push_back (this);
 }
 

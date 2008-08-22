@@ -4,7 +4,7 @@
  * Author:      Peter Ivanov
  * Modified by:
  * Created:     2005/04/14
- * Last modify: 2008-08-22 11:17:44 ivanovp {Time-stamp}
+ * Last modify: 2008-08-22 13:09:51 ivanovp {Time-stamp}
  * Copyright:   (C) Peter Ivanov, 2005
  * Licence:     GPL
  */
@@ -208,6 +208,7 @@ void CApp::init_universe ()
         smap[K_ALIASES] = DEFAULT_ALIASES;
     }
     std::string aliases = smap[K_ALIASES];
+    player->set_ostream (&player_os);
     player->set_aliases (aliases);
 #ifdef __DEBUG__
 #define PLAYER2_ID      "farkas"
@@ -222,6 +223,7 @@ void CApp::init_universe ()
 #endif
         exit (-1);
     }
+    player2->set_ostream (&player2_os);
     player2->set_aliases (aliases);
 #endif
     // Initialize random number generator.
@@ -595,7 +597,6 @@ void CApp::init_window ()
     // Setting entry default
     set_focus (*entry);
 
-    player->set_ostream (&player_os);
     player->set_spectator (true);
 #ifdef __DEBUG__
     player2->set_ostream (&player2_os);

@@ -24,7 +24,7 @@
 # DEBUG:
 # 0: disabled, normal code
 # 1: enabled, compiling code with debugging features
-DEBUG = 0
+DEBUG = 1
 # LANG:
 # 0: english
 # 1: hungarian

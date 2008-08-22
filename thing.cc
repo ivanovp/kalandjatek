@@ -4,7 +4,7 @@
  * Author:      Peter Ivanov
  * Modified by:
  * Created:     2005/01/13
- * Last modify: 2008-08-22 11:40:36 ivanovp {Time-stamp}
+ * Last modify: 2008-08-22 13:53:12 ivanovp {Time-stamp}
  * Copyright:   (C) Peter Ivanov, 2005
  * Licence:     GPL
  */
@@ -53,6 +53,7 @@ CStringVector CThing::stat_keyword_vector (S_STAT_NUMBER);
 
 void CThing::init ()
 {
+    type = "thing";
     sn = last_sn++;
     /*std::ostringstream os;
     os << __INFO__ << __FUNCTION__ << " sn: " << get_sn ();
@@ -635,6 +636,7 @@ std::string CThing::info (int verbose_level)
 {
     std::ostringstream os;
     os << "### CThing info ###" << std::endl;
+    os << "type: " << get_type () << std::endl;
     os << "sn: " << get_sn () << std::endl;
     os << "id: [" << get_id () << "]" << std::endl;
     if (verbose_level <= 0) return os.str ();
