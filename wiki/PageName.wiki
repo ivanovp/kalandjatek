@@ -1,7 +1,0 @@
-#summary Kalandjatek.
-
-= Introduction =
-
-Kalandjatek is only a skeleton of an old-style (MUD) adventure game. The software can be compiled to use English or Hungarian language. However the test game is in Hungarian.
-
-http://www.ivanov.eu/files/public/szerepjatek/kjscreenshot.png
