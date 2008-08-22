@@ -1,0 +1,2504 @@
+/*
+ * File:        creature.cc
+ * Purpose:     CCreature class implementation
+ * Author:      Peter Ivanov
+ * Modified by:
+ * Created:     2005/04/13
+ * Last modify: 2008-08-22 10:23:40 ivanovp {Time-stamp}
+ * Copyright:   (C) Peter Ivanov, 2005
+ * Licence:     GPL
+ */
+
+#include <string>
+#include <iomanip>
+#include <cstdlib>
+#include <cstdio>  // snprintf
+
+#include "debug.h"
+#include "item.h"
+#include "creature.h"
+#include "map.h"
+#include "keyword.h"
+#include "regex.h"
+#include "split.h"
+#include "trans.h" // uppercase
+#include "inv.h"
+#include "colors.h"
+#include "nullstream.h"
+#include "app.h" // ABOUT
+
+/// Unit of weight
+#define U_WEIGHT        "kg"
+
+CThingList CCreature::global_creaturelist;
+
+#if (LANG == ENG)
+const char* CCreature::CMD_SAY         = "say";
+const char* CCreature::CMD_LOOK        = "look";
+const char* CCreature::CMD_INVENTORY   = "inventory";
+const char* CCreature::CMD_NORTH       = "n";
+const char* CCreature::CMD_SOUTH       = "s";
+const char* CCreature::CMD_EAST        = "e";
+const char* CCreature::CMD_WEST        = "w";
+const char* CCreature::CMD_NORTHEAST   = "ne";
+const char* CCreature::CMD_SOUTHEAST   = "se";
+const char* CCreature::CMD_NORTHWEST   = "nw";
+const char* CCreature::CMD_SOUTHWEST   = "sw";
+const char* CCreature::CMD_IN          = "in";
+const char* CCreature::CMD_OUT         = "out";
+const char* CCreature::CMD_UP          = "up";
+const char* CCreature::CMD_DOWN        = "down";
+const char* CCreature::CMD_PICKUP      = "pickup";
+const char* CCreature::CMD_DROP        = "drop";
+const char* CCreature::CMD_ALIAS       = "alias";
+const char* CCreature::CMD_BRINGOUT    = "bringout";
+const char* CCreature::CMD_PUTAWAY     = "putaway";
+const char* CCreature::CMD_POINTS      = "points";
+const char* CCreature::CMD_ABOUT       = "about";
+const char* CCreature::CMD_HELP        = "help";
+const char* CCreature::CMD_HELP2       = "?";
+// parameters
+const char* CCreature::CMD_SELF        = "myself";
+const char* CCreature::CMD_ALL         = "all";
+const char* CCreature::CMD_BRIEF       = "-brief";
+const char* CCreature::CMD_VERBOSE     = "-verbose";
+#endif
+#if (LANG == HUN)
+const char* CCreature::CMD_SAY         = "mond";
+const char* CCreature::CMD_LOOK        = "néz";
+const char* CCreature::CMD_INVENTORY   = "leltár";
+const char* CCreature::CMD_NORTH       = "é";
+const char* CCreature::CMD_SOUTH       = "d";
+const char* CCreature::CMD_EAST        = "k";
+const char* CCreature::CMD_WEST        = "ny";
+const char* CCreature::CMD_NORTHEAST   = "ék";
+const char* CCreature::CMD_SOUTHEAST   = "dk";
+const char* CCreature::CMD_NORTHWEST   = "ény";
+const char* CCreature::CMD_SOUTHWEST   = "dny";
+const char* CCreature::CMD_IN          = "be";
+const char* CCreature::CMD_OUT         = "ki";
+const char* CCreature::CMD_UP          = "fel";
+const char* CCreature::CMD_DOWN        = "le";
+const char* CCreature::CMD_PICKUP      = "felvesz";
+const char* CCreature::CMD_DROP        = "eldob";
+const char* CCreature::CMD_ALIAS       = "álnév";
+const char* CCreature::CMD_BRINGOUT    = "elõvesz";
+const char* CCreature::CMD_PUTAWAY     = "eltesz";
+const char* CCreature::CMD_POINTS      = "pontok";
+const char* CCreature::CMD_ABOUT       = "névjegy";
+const char* CCreature::CMD_HELP        = "súgó";
+const char* CCreature::CMD_HELP2       = "?";
+// parameters;
+const char* CCreature::CMD_SELF        = "magam";
+const char* CCreature::CMD_ALL         = "mindent";
+const char* CCreature::CMD_BRIEF       = "-rövid";
+const char* CCreature::CMD_VERBOSE     = "-teljes";
+#endif
+
+const char* CCreature::K_SEX            = "iSex";
+const char* CCreature::K_RANDOMMOVE     = "iRandomMove";
+
+void CCreature::init ()
+{
+    /*std::ostringstream os;
+    os << __INFO__ << __FUNCTION__ << " sn: " << get_sn ();
+    Log.debug (os.str ());*/
+    global_creaturelist.push_back (this);
+    spectator = false;
+    // \todo TODO Default otream works only under *nix systems. Implement onullstream!
+    //ostream = new std::ofstream ("/dev/null");
+    ostream = new NullStream;
+    //ostream = &std::cout;
+    // setting default parser_map
+    parser_map[CMD_SAY] = new CCmdFunctor<CCreature> (this, &CCreature::cmd_say);
+    parser_map[CMD_LOOK] = new CCmdFunctor<CCreature> (this, &CCreature::cmd_look);
+    parser_map[CMD_INVENTORY] = new CCmdFunctor<CCreature> (this, &CCreature::cmd_inventory);
+    parser_map[CMD_NORTH] = new CCmdFunctor<CCreature> (this, &CCreature::cmd_move);
+    parser_map[CMD_SOUTH] = new CCmdFunctor<CCreature> (this, &CCreature::cmd_move);
+    parser_map[CMD_EAST] = new CCmdFunctor<CCreature> (this, &CCreature::cmd_move);
+    parser_map[CMD_WEST] = new CCmdFunctor<CCreature> (this, &CCreature::cmd_move);
+    parser_map[CMD_NORTHEAST] = new CCmdFunctor<CCreature> (this, &CCreature::cmd_move);
+    parser_map[CMD_SOUTHEAST] = new CCmdFunctor<CCreature> (this, &CCreature::cmd_move);
+    parser_map[CMD_NORTHWEST] = new CCmdFunctor<CCreature> (this, &CCreature::cmd_move);
+    parser_map[CMD_SOUTHWEST] = new CCmdFunctor<CCreature> (this, &CCreature::cmd_move);
+    parser_map[CMD_IN] = new CCmdFunctor<CCreature> (this, &CCreature::cmd_move);
+    parser_map[CMD_OUT] = new CCmdFunctor<CCreature> (this, &CCreature::cmd_move);
+    parser_map[CMD_UP] = new CCmdFunctor<CCreature> (this, &CCreature::cmd_move);
+    parser_map[CMD_DOWN] = new CCmdFunctor<CCreature> (this, &CCreature::cmd_move);
+    parser_map[CMD_PICKUP] = new CCmdFunctor<CCreature> (this, &CCreature::cmd_pickup);
+    parser_map[CMD_DROP] = new CCmdFunctor<CCreature> (this, &CCreature::cmd_drop);
+    parser_map[CMD_ALIAS] = new CCmdFunctor<CCreature> (this, &CCreature::cmd_alias);
+    parser_map[CMD_BRINGOUT] = new CCmdFunctor<CCreature> (this, &CCreature::cmd_bringout);
+    parser_map[CMD_PUTAWAY] = new CCmdFunctor<CCreature> (this, &CCreature::cmd_putaway);
+    parser_map[CMD_POINTS] = new CCmdFunctor<CCreature> (this, &CCreature::cmd_points);
+    parser_map[CMD_ABOUT] = new CCmdFunctor<CCreature> (this, &CCreature::cmd_about);
+
+    parser_map[CMD_HELP] = new CCmdFunctor<CCreature> (this, &CCreature::cmd_help);
+    parser_map[CMD_HELP2] = new CCmdFunctor<CCreature> (this, &CCreature::cmd_help);
+}
+
+CCreature::CCreature () : CThing::CThing ()
+{
+    /*std::ostringstream os;
+    os << __INFO__ << __PRETTY_FUNCTION__ << " constructor, sn: " << get_sn ();
+    Log.debug (os.str ());*/
+    init (); 
+}
+
+CCreature::CCreature (const std::string& id, const std::string& name, const std::string& descr, CThing* parent) :
+    CThing::CThing (id, name, descr, parent)
+{
+    /*std::ostringstream os;
+    os << __INFO__ << __PRETTY_FUNCTION__ << " constructor, sn: " << get_sn ();
+    Log.debug (os.str ());*/
+    init ();
+}
+
+CCreature::CCreature (CThing& thing) : CThing::CThing (thing)
+{
+    /*std::ostringstream os;
+    os << __INFO__ << __PRETTY_FUNCTION__ << " copy constructor, sn: " << get_sn ();
+    Log.debug (os.str ());*/
+    init ();
+}
+
+CCreature::CCreature (CCreature& thing) : CThing::CThing (thing)
+{
+    /*std::ostringstream os;
+    os << __INFO__ << __PRETTY_FUNCTION__ << " copy constructor, sn: " << get_sn ();
+    Log.debug (os.str ());*/
+    init ();
+}
+
+void CCreature::setup ()
+{
+    CThing::setup ();
+    std::string wears_str = get_sparam (K_WEAR);
+    if (!wears_str.empty ())
+    {
+        // split object for splitting string into pieces
+        CSplit split;
+        // for storing string pieces
+        CStringVector sv;
+        sv = split.split (K_LISTSEPARATOR, wears_str);
+        if (!sv.empty ())
+        {
+            for (CStringVectorIt i = sv.begin (); i != sv.end (); i++)
+            {
+                CStringVector sv2;
+                sv2 = split.split (K_LISTSEPARATOR2, *i);
+                std::string type, id;
+                CStringVectorIt j = sv2.begin ();
+                type = *j;
+                id = *(++j);
+                CThing *th;
+                // searching in childs
+                th = find (id, childs);
+                if (th)
+                {
+                    // Marking thing as weared, wielded, etc.
+                    th->set_sparam (CItem::K_WEAREDON, type);
+                }
+                else
+                {
+                    // FIXME what should we do?
+                    std::ostringstream os;
+#if (LANG == ENG)
+                    os << __INFO__ << "'" << id << "' not found! Identifier: " << get_id () << ".";
+#endif
+#if (LANG == HUN)
+                    os << __INFO__ << "'" << id << "' nem létezik! Azonosító: " << get_id () << ".";
+#endif
+                    Log.warn (os.str ());
+                }
+            }
+        }
+    }
+    set_iparam (K_HP, get_stat (S_MAX_HP));
+    set_iparam (K_MP, get_stat (S_MAX_MP));
+}
+
+CCreature::~CCreature ()
+{
+    /*std::ostringstream os;
+    os << __INFO__ << "destructor, sn: " << get_sn ();
+    Log.debug (os.str ());*/
+    set_spectator (false);
+    CThingListIt i = std::find (global_creaturelist.begin (), global_creaturelist.end (), this);
+    if (i != global_creaturelist.end ())
+    {
+        global_creaturelist.remove (*i);
+    }
+    else
+    {
+        std::ostringstream os;
+        os << __INFO__ << "Internal error. Creature not found in global_creaturelist (sn: " << get_sn () << ")!";
+        Log.warn (os.str ());
+    }
+    // Deleting functors.
+    if (!parser_map.empty ())
+    {
+        for (CFunctorMapIt i = parser_map.begin (); i != parser_map.end (); i++)
+        {
+            delete i->second;
+        }
+    }
+}
+
+void CCreature::set_ostream (std::ostream *ostream)
+{
+    this->ostream = ostream;
+}
+
+void CCreature::set_spectator (bool mode)
+{
+    this->spectator = mode;
+    if (mode)
+    {
+        // ENABLE spectator mode
+        CThingListIt i = std::find (global_spectator_thinglist.begin (), global_spectator_thinglist.end (), this);
+        if (i != global_spectator_thinglist.end ())
+        {
+            std::ostringstream os;
+            os << __INFO__ << "This thing was already added to global_spectator_thinglist (sn: " << get_sn () << ").";
+            Log.debug (os.str ());
+        }
+        else
+        {
+            global_spectator_thinglist.push_back (this);
+        }
+    }
+    else
+    {
+        // DISABLE spectator mode 
+        CThingListIt i = std::find (global_spectator_thinglist.begin (), global_spectator_thinglist.end (), this);
+        if (i != global_spectator_thinglist.end ())
+        {
+            std::ostringstream os;
+            os << __INFO__ << "Erasing thing from global_spectator_thinglist (sn: " << get_sn () << ").";
+            Log.debug (os.str ());
+            global_spectator_thinglist.remove (this);
+        }
+    }
+}
+
+bool CCreature::get_spectator ()
+{
+    return spectator;
+}
+
+void CCreature::set_aliases (std::string aliases)
+{
+    CStringVector sv;
+    CSplit split;
+    sv = split (K_LISTSEPARATOR, aliases);
+    for (CStringVectorIt i = sv.begin (); i != sv.end (); i++)
+    {
+        CRegEx regex ("^(.*)" K_LISTSEPARATOR2 "(.*)$");
+        if (regex.Matches (*i))
+        {
+            std::string alias = regex.GetMatch (*i, 1),
+                        cmd = regex.GetMatch (*i, 2);
+            cmd_alias (CMD_ALIAS, alias + " " + cmd);
+        }
+        else
+        {
+            std::ostringstream os;
+            os << __INFO__ << "Invalid alias: " << *i;
+            Log.error (os.str ());
+        }
+    }
+}
+
+std::string CCreature::get_aliases ()
+{
+    std::string aliases;
+    bool first = true;
+    if (!alias_map.empty ())
+    {
+        for (CStringMapIt i = alias_map.begin (); i != alias_map.end (); i++)
+        {
+            if (!first)
+            {
+                aliases += K_LISTSEPARATOR;
+            }
+            first = false;
+            aliases += i->first + K_LISTSEPARATOR2 + i->second;
+        }
+    }
+    return aliases;
+}
+
+std::string CCreature::get_shape ()
+{
+    std::ostringstream os;
+    os << "C";
+    return os.str ();
+}
+
+int CCreature::get_color ()
+{
+    return 0;
+}
+
+void CCreature::random_look ()
+{
+    // look something or someone
+    CThingList tl;
+    int rn = int (3.0 * rand () / (RAND_MAX + 1.0));
+    switch (rn)
+    {
+        case 0:
+            // look something in inventory
+            tl = childs;
+            break;
+        case 1:
+            // look something in map
+            tl = parent->childs;
+            tl.remove (this);
+            break;
+        case 2:
+            // look around
+            parser (CMD_LOOK);
+            return;
+    }
+    CThing *th = NULL;
+    if (!tl.empty ())
+    {
+        int rn = int ((float) tl.size () * rand () / (RAND_MAX + 1.0));
+        int j = 0;
+        for (CThingListIt i = tl.begin (); i != tl.end (); i++, j++)
+        {
+            if (j == rn)
+            {
+                th = *i;
+                break;
+            }
+        }
+    }
+    if (th)
+    {
+        parser (std::string (CMD_LOOK) + " " + th->get_name ());
+    }
+}
+
+void CCreature::random_say ()
+{
+    std::string s = get_sparam (K_RANDOMSAY);
+    if (!s.empty ())
+    {
+        CStringVector sv;
+        CSplit split;
+        sv = split (K_LISTSEPARATOR, s);
+        int rn = int ((float) sv.size () * rand () / (RAND_MAX + 1.0));
+        int j = 0;
+        for (CStringVectorIt i = sv.begin (); i != sv.end (); i++, j++)
+        {
+            if (j == rn)
+            {
+                parser (std::string (CMD_SAY) + " " + *i);
+                break;
+            }
+        }
+    }
+}
+
+void CCreature::random_move ()
+{
+    std::ostringstream os;
+    //os << __INFO__ << __FUNCTION__;
+    //Log.debug (os.str ());
+    //if (get_iparam (K_RANDOMMOVE))
+    if (doesRandomMove ())
+    {
+        CSplit split;
+        if (parent == NULL)
+        {
+            std::ostringstream os;
+            os << __INFO__ << "No parent (parent == NULL)!";
+            Log.debug (os.str ());
+            return;
+        }
+        CStringVector sv = split (K_LISTSEPARATOR, parent->get_sparam (K_EXITS));
+        if (!sv.empty ())
+        {
+            int rn = int ((float) sv.size () * rand () / (RAND_MAX + 1.0));
+            int j = 0;
+            for (CStringVectorIt i = sv.begin (); i != sv.end (); i++, j++)
+            {
+                if (j != rn) continue;
+                CRegEx regex ("^(.*)" K_LISTSEPARATOR2 "(.*)$");
+                if (regex.Matches (*i))
+                {
+                    std::string exit = regex.GetMatch (*i, 1),
+                                id = regex.GetMatch (*i, 2);
+                    CThing *thing = find (id, CMap::global_maplist);
+                    if (thing != NULL)
+                    {
+                        std::ostringstream os;
+                        //os << __INFO__ << "Random move: " << exit << " " << thing->get_name ();
+                        //Log.debug (os.str ());
+                        parser (exit + " " + thing->get_name ());
+                        break;
+                    }
+                    else
+                    {
+                        std::ostringstream os;
+                        os << __INFO__ << "Invalid exit identifier: " << *i;
+                        Log.warn (os.str ());
+                    }
+                }
+                else
+                {
+                    std::ostringstream os;
+                    os << __INFO__ << "Invalid exit: " << *i;
+                    Log.warn (os.str ());
+                }
+            }
+        }
+    }
+}
+
+void CCreature::do_something ()
+{
+    std::ostringstream os;
+    /*os << __INFO__ << __PRETTY_FUNCTION__;
+    Log.warn (os.str ());*/
+    childs_do_something ();
+    // If not player then do something funny
+    if (!get_spectator ())
+    {
+#ifdef __DEBUG__
+#define CHANCE  90.0
+#else
+#define CHANCE  100.0
+#endif
+        // random number
+        int rn = int (CHANCE * rand () / (RAND_MAX + 1.0));
+        if (rn == 0)
+        {
+            os.str ("");
+            os << get_name () << " (sn: " << get_sn () << ") does a random event.";
+            Log.debug (os.str ());
+            int rn = int (3.0 * rand () / (RAND_MAX + 1.0));
+            switch (rn)
+            {
+                case 0:
+                    random_look ();
+                    break;
+                case 1:
+                    random_say ();
+                    break;
+                case 2:
+                    random_move ();
+                    break;
+                case 3:
+                    //random_attack ();
+                    break;
+                default:
+                    os.str ("");
+                    os << __INFO__ << "Internal error! Unknown random event.";
+                    Log.debug (os.str ());
+                    break;
+            }
+        }
+    }
+}
+
+bool CCreature::parser (const std::string& text, signed long from_serial_number)
+{
+    std::ostringstream os;
+    os << __INFO__ << __FUNCTION__ << " " << get_name () << ": [" << text << "]";
+    Log.debug (os.str ());
+    if (ostream == NULL)
+    {
+        os.str ("");
+        os << __INFO__ << "Output stream not initialized (ostream == NULL)!";
+        Log.error (os.str ());
+        return false;
+    }
+    
+    if (parent == NULL)
+    {
+        os.str ("");
+        os << __INFO__ << "No parent (parent == NULL)!";
+        Log.error (os.str ());
+        return false;
+    }
+   
+    std::string Text = text;
+    CRegEx regex ("^(.*\\S+)\\s+$");
+    if (regex.Matches (Text))
+    {
+        // Cutting out whitespaces at end of 'Text'
+        Text = regex.GetMatch (Text, 1);
+    }
+    regex.Compile ("^\\s*(\\S+)\\s*(.*)\\s*$");
+    if (regex.Matches (Text))
+    {
+        bool perm = false; // permission to give command
+        std::string cmd, params;
+        cmd = regex.GetMatch (Text, 1);
+        params = regex.GetMatch (Text, 2);
+        
+        /*std::ostringstream os;
+        os << __INFO__ << __FUNCTION__ << " cmd: [" << cmd << "] params: [" << params << "]";
+        Log.debug (os.str ());*/
+        
+        // command given by owner
+        if (from_serial_number == -1 || from_serial_number == get_sn ())
+        {
+            perm = true;
+        }
+        else
+        {
+            // \todo TODO implement permission checker!
+#warning "TODO: implement permission checker!"
+            std::ostringstream os;
+            os << __INFO__ << "Permission checker not implemented.";
+            Log.error (os.str ());
+        }
+        if (perm)
+        {
+            CFunctorMapIt i = parser_map.find (cmd);
+            if (i != parser_map.end ())
+            {
+                CFunctor *functor = parser_map[cmd];
+                (*functor) (cmd, params);
+                return true;
+            }
+            else
+            {
+#if (LANG == ENG)
+                (*ostream) << C_ERR << "Unknown command: " << C_CMD << Text << "." << C_RST << " See help: ?" << std::endl;
+#endif
+#if (LANG == HUN)
+                (*ostream) << C_ERR << "Ismeretlen parancs: " << C_CMD << Text << "." << C_RST << " Nézd meg a súgót: ?" << std::endl;
+#endif
+                return false;
+            }
+        }
+    }
+#if (LANG == ENG)
+    (*ostream) << C_ERR << "Invalid input: " << C_CMD << text << C_RST << std::endl;
+#endif
+#if (LANG == HUN)
+    (*ostream) << C_ERR << "Érvénytelen parancs: " << C_CMD << text << C_RST << std::endl;
+#endif
+    return false;
+}
+
+void CCreature::write_to_spectators (const std::string& text, CThingList& except_thinglist, bool only_this_place)
+{
+    for (CThingListIt i = global_spectator_thinglist.begin (); i != global_spectator_thinglist.end (); i++)
+    {
+        bool ok = true;
+        CThingListIt j = std::find (except_thinglist.begin (), except_thinglist.end (), *i);
+        if (j != except_thinglist.end ())
+        {
+            ok = false;
+        }
+        if (ok && (!only_this_place || (only_this_place && (*i)->parent == parent)))
+        {
+            CCreature *creature;
+            creature = dynamic_cast<CCreature*> (*i);
+            if (creature != NULL)
+            {
+                *(creature->ostream) << text;
+            }
+            else
+            {
+                std::ostringstream os;
+                os << __INFO__ << "Internal error. Dynamic cast failed. Not creature in global_spectator_thinglist.";
+                Log.error (os.str ());
+            }
+        }
+    }
+}
+
+void CCreature::cmd_say (const std::string& cmd, const std::string& params)
+{
+    /*std::ostringstream os;
+    os << __INFO__ << __FUNCTION__ << " " << get_name () << " " << cmd << " " << params;
+    Log.debug (os.str ());*/
+    CRegEx regex ("(\\S+)\\s+(\\S+)");
+    if (cmd == CMD_HELP && regex.Matches (params))
+    {
+        std::string help_cmd = regex.GetMatch (params, 1),
+                    help_params = regex.GetMatch (params, 2);
+        if (help_params == CMD_BRIEF)
+        {
+#if (LANG == ENG)
+            (*ostream) << "Say something.";
+#endif
+#if (LANG == HUN)
+            (*ostream) << "Mondani valamit.";
+#endif
+        }
+        else if (help_params == CMD_VERBOSE)
+        {
+#if (LANG == ENG)
+            (*ostream) << "Say something." << std::endl;
+            (*ostream) << "Syntax: " C_CMD << CMD_SAY << " <text>" C_RST << std::endl;
+            (*ostream) << "Example: " C_CMD << CMD_SAY << " Hello!" C_RST << std::endl;
+#endif
+#if (LANG == HUN)
+            (*ostream) << "Mondani valamit." << std::endl;
+            (*ostream) << "Szintaktika: " C_CMD << CMD_SAY << " <szöveg>" C_RST << std::endl;
+            (*ostream) << "Például: " C_CMD << CMD_SAY << " Helló!" C_RST << std::endl;
+#endif
+        }
+        return;
+    }
+    // checking whitespaces
+    regex.Compile ("^\\s*$");
+    if (regex.Matches (params))
+    {
+        // there are only whitespaces in parameter string
+#if (LANG == ENG)
+        (*ostream) << C_ERR << "No parameter." << C_RST << std::endl;
+#endif
+#if (LANG == HUN)
+        (*ostream) << C_ERR << "Nincs paraméter." << C_RST << std::endl;
+#endif
+    }
+    else
+    {
+        std::ostringstream os;
+        CThingList except;
+#warning "FIXME: int < 5: nem erti amit mondanak"
+        except.push_back (this);
+        if (get_stat (S_INT) < 5)
+        {
+#if (LANG == ENG)
+            (*ostream) << C_DO << "You can't speak. You make only unarticulated voices." << C_RST << std::endl;
+            os << C_DO << get_name (M_ARTICLE | M_CAPITAL_FIRST) << " makes unarticulated voices." << C_RST << std::endl;
+#endif
+#if (LANG == HUN)
+            (*ostream) << C_DO << "Nem tudsz beszélni, csak artikulálatlan hangok jönnek belõled." << C_RST << std::endl;
+            os << C_DO << get_name (M_ARTICLE | M_CAPITAL_FIRST) << " artikulálatlan hangokat ad." << C_RST << std::endl;
+#endif
+        }
+        else
+        {
+#if (LANG == ENG)
+            (*ostream) << C_DO << "You say: " << C_RST << params << std::endl;
+            os << C_DO << get_name (M_ARTICLE | M_CAPITAL_FIRST) << " say: " << C_RST << params << std::endl;
+#endif
+#if (LANG == HUN)
+            (*ostream) << C_DO << "Azt mondod: " << C_RST << params << std::endl;
+            os << C_DO << get_name (M_ARTICLE | M_CAPITAL_FIRST) << " azt mondja: " << C_RST << params << std::endl;
+#endif
+        }
+        write_to_spectators (os.str (), except);
+    }
+}
+
+void CCreature::cmd_look (const std::string& cmd, const std::string& params)
+{
+    /*std::ostringstream os;
+    os << __INFO__ << __FUNCTION__ << " " << get_name () << " " << cmd << " " << params;
+    Log.debug (os.str ());*/
+    CRegEx regex ("(\\S+)\\s+(\\S+)");
+    if (cmd == CMD_HELP && regex.Matches (params))
+    {
+        std::string help_cmd = regex.GetMatch (params, 1),
+                    help_params = regex.GetMatch (params, 2);
+        if (help_params == CMD_BRIEF)
+        {
+#if (LANG == ENG)
+            (*ostream) << "Look around or look something.";
+#endif
+#if (LANG == HUN)
+            (*ostream) << "Körülnézni vagy megnézni valamit.";
+#endif
+        }
+        else if (help_params == CMD_VERBOSE)
+        {
+#if (LANG == ENG)
+            (*ostream) << "Look around or look something." << std::endl;
+            (*ostream) << "Syntax: " << C_CMD << CMD_LOOK << " [something]" << C_RST << std::endl;
+            (*ostream) << "Example: " << C_CMD << CMD_LOOK << " sword" << C_RST << std::endl;
+#endif
+#if (LANG == HUN)
+            (*ostream) << "Körülnézni vagy megnézni valamit." << std::endl;
+            (*ostream) << "Szintaktika: " << C_CMD << CMD_LOOK << " [valami]" << C_RST << std::endl;
+            (*ostream) << "Például: " << C_CMD << CMD_LOOK << " kardot" << C_RST << std::endl;
+#endif
+            (*ostream) << "         " << C_CMD << CMD_LOOK << " " << CMD_SELF << C_RST << std::endl;
+        }
+        return;
+    }
+    CThingList Childs = parent->childs;
+    Childs.remove (this);
+    regex.Compile ("^\\s*$");
+    if (regex.Matches (params))
+    {
+        std::ostringstream os;
+        CThingList except;
+        except.push_back (this);
+        // There are only whitespaces in parameter string
+        // The creature looks around in this place.
+#if (LANG == ENG)
+        (*ostream) << C_DO << "You look around." << C_RST << std::endl;
+        os << C_DO << get_name (M_ARTICLE | M_CAPITAL_FIRST) << " looks around." << C_RST << std::endl;
+#endif
+#if (LANG == HUN)
+        (*ostream) << C_DO << "Körülnézel." << C_RST << std::endl;
+        os << C_DO << get_name (M_ARTICLE | M_CAPITAL_FIRST) << " körülnéz." << C_RST << std::endl;
+#endif
+#ifdef __DEBUG__
+        //(*ostream) << info (4) << std::endl;
+        //(*ostream) << parent->info (4) << std::endl;
+#endif
+        (*ostream) << std::endl;
+        (*ostream) << parent->get_name ();
+        (*ostream) << std::endl << std::endl;
+        (*ostream) << parent->get_descr ();
+        (*ostream) << std::endl << std::endl;
+        // print items and creatures of the area
+        if (!Childs.empty ())
+        {
+            CInventoryMap inventory_map;
+            for (CThingListIt i = Childs.begin (); i != Childs.end (); i++)
+            {
+                CThing *th = *i;
+                std::string name;
+                name = th->get_name ();
+                if ((th->get_type () == "item" && th->get_iparam (CItem::K_VISIBLE)) ||
+                        th->get_type () == "creature")
+                {
+                    if (inventory_map.find (name) == inventory_map.end ())
+                    {
+                        inventory_map[name].counter = 1;
+                        inventory_map[name].noun = th->get_iparam (K_NOUN);
+                        inventory_map[name].plural = th->get_sparam (K_PLURAL);
+                    }
+                    else
+                    {
+                        inventory_map[name].counter++;
+                    }
+                }
+            }
+            if (!inventory_map.empty ())
+            {
+#if (LANG == ENG)
+                (*ostream) << "You see here ";
+#endif
+#if (LANG == HUN)
+                (*ostream) << "Itt van ";
+#endif
+                CInventory inv (ostream);
+                inv.inventory_map = inventory_map;
+                inv.write ();
+                (*ostream) << "." << std::endl;
+            }
+            else
+            {
+#if (LANG == ENG)
+                (*ostream) << "You see nothing here." << std::endl;
+#endif
+#if (LANG == HUN)
+                (*ostream) << "Nincs itt semmi." << std::endl;
+#endif
+            }
+            (*ostream) << std::endl;
+        }
+        CSplit split;
+        if (parent == NULL)
+        {
+            std::ostringstream os;
+            os << __INFO__ << "No parent (parent == NULL)!";
+            Log.debug (os.str ());
+            return;
+        }
+        // print possible exits of the area
+        CStringVector sv = split (K_LISTSEPARATOR, parent->get_sparam (K_EXITS));
+        if (!sv.empty ())
+        {
+            //(*ostream) << std::endl;
+            for (CStringVectorIt i = sv.begin (); i != sv.end (); i++)
+            {
+                CRegEx regex ("^(.*)" K_LISTSEPARATOR2 "(.*)$");
+                if (regex.Matches (*i))
+                {
+                    std::string exit = regex.GetMatch (*i, 1),
+                                id = regex.GetMatch (*i, 2);
+                    (*ostream) << exit << ": ";
+                    CThing *thing = find (id, CMap::global_maplist);
+                    if (thing != NULL)
+                    {
+                        (*ostream) << thing->get_name () << std::endl;
+                    }
+                    else
+                    {
+                        std::ostringstream os;
+                        os << __INFO__ << "Invalid exit identifier: " << *i;
+                        Log.warn (os.str ());
+                    }
+                }
+                else
+                {
+                    std::ostringstream os;
+                    os << __INFO__ << "Invalid exit: " << *i;
+                    Log.warn (os.str ());
+                }
+            }
+        }
+        write_to_spectators (os.str (), except);
+    }
+    else
+    {
+        // the creature looks at something/someone
+        CThing *thing = NULL;
+        std::ostringstream os;
+        CThingList except;
+        except.push_back (this);
+        if (params == CMD_SELF)
+        {
+            thing = this;
+        }
+        else
+        {
+            // look something in this place
+            for (CThingListIt i = Childs.begin (); i != Childs.end (); i++)
+            {
+                if (((*i)->get_type () == "item" || (*i)->get_type () == "creature") && (*i)->compare_name (params))
+                {
+                    thing = *i;
+                    break;
+                }
+            }
+            // look something in inventory
+            for (CThingListIt i = childs.begin (); i != childs.end (); i++)
+            {
+                if ((*i)->get_type () == "item" && (*i)->compare_name (params))
+                {
+                    thing = *i;
+                    break;
+                }
+            }
+        }
+#ifdef __DEBUG__
+        CRegEx regex ("(\\d+)");
+        if (regex.Matches (params))
+        {
+            long sn = atol (regex.GetMatch (params, 1).c_str ());
+            /*
+            std::ostringstream os;
+            os << "Searching for serial number " << sn << "." << std::endl;
+            Log.debug (os.str ());
+            */
+            for (CThingListIt i = global_thinglist.begin (); i != global_thinglist.end (); i++)
+            {
+                if ((*i)->get_sn () == sn)
+                {
+                    thing = *i;
+                    break;
+                }
+            }
+        }
+#endif
+        if (thing != NULL)
+        {
+            except.push_back (thing);
+            if (thing == this)
+            {
+#if (LANG == ENG)
+                (*ostream) << C_DO << "You look self." << C_RST << std::endl;
+                (*ostream) << C_DO << "You are " << get_name () << "." << C_RST << std::endl;
+                os << C_DO << get_name (M_ARTICLE | M_CAPITAL_FIRST) << " looks self." << C_RST << std::endl;
+#endif
+#if (LANG == HUN)
+                (*ostream) << C_DO << "Megnézed magad." << C_RST << std::endl;
+                (*ostream) << C_DO << get_name () << " vagy." << C_RST << std::endl;
+                os << C_DO << get_name (M_ARTICLE | M_CAPITAL_FIRST) << " megnézi magát." << C_RST << std::endl;
+#endif
+            }
+            else
+            {
+#if (LANG == ENG)
+                (*ostream) << C_DO << "You look " << thing->get_name () << "." << C_RST << std::endl;
+                os << C_DO << get_name (M_ARTICLE | M_CAPITAL_FIRST) << " looks " << thing->get_name (M_ARTICLE) << "." << C_RST << std::endl;
+#endif
+#if (LANG == HUN)
+                (*ostream) << C_DO << "Megnézed " << thing->get_name (M_ARTICLE | M_RAG_T) << "." << C_RST << std::endl;
+                os << C_DO << get_name (M_ARTICLE | M_CAPITAL_FIRST) << " megnézi " << thing->get_name (M_ARTICLE | M_RAG_T) << "." << C_RST << std::endl;
+#endif
+                CCreature *creature;
+                creature = dynamic_cast<CCreature*> (thing);
+                if (creature != NULL && creature->get_spectator ())
+                {
+#if (LANG == ENG)
+                    (*creature->ostream) << C_DO << get_name (M_ARTICLE | M_CAPITAL_FIRST) << " looks you." << C_RST << std::endl;
+#endif
+#if (LANG == HUN)
+                    (*creature->ostream) << C_DO << get_name (M_ARTICLE | M_CAPITAL_FIRST) << " megnéz téged." << C_RST << std::endl;
+#endif
+                }
+            }
+            (*ostream) << std::endl;
+            (*ostream) << thing->get_descr () << std::endl;
+
+            CCreature *creature;
+            creature = dynamic_cast<CCreature*> (thing);
+            if (creature)
+            {
+                CStringMap types_map;
+#if (LANG == ENG)
+                types_map[K_LEFT_HAND]  = "wields %s in the left hand.";
+                types_map[K_RIGHT_HAND] = "wields %s in the right hand.";
+                types_map[K_TWO_HANDS]  = "wields %s in the hands.";
+                types_map[K_RING]       = "has %s on a finger.";
+                types_map[K_BRACELET]   = "has %s on a wrist.";
+                types_map[K_AMULET]     = "wears %s on the neck.";
+                types_map[K_CLOAK]      = "wears %s.";
+                types_map[K_PANTS]      = "wears %s.";
+                types_map[K_FOOTWEAR]   = "wears %s on the feet.";
+                types_map[K_GLOVE]      = "wears %s on the hands.";
+                types_map[K_CAP]        = "wears %s on the head.";
+                types_map[K_TORSO]      = "wears %s on the torso.";
+                types_map[K_ARMGUARDS]  = "wears %s on the arm.";
+                types_map[K_SHINGUARDS] = "wears %s on the shin.";
+#endif
+#if (LANG == HUN)
+                types_map[K_LEFT_HAND]  = "Egy %s fog a bal kezében.";
+                types_map[K_RIGHT_HAND] = "Egy %s fog a jobb kezében.";
+                types_map[K_TWO_HANDS]  = "Egy %s fog a két kezében.";
+                types_map[K_RING]       = "Egy %s visel az egyik ujján.";
+                types_map[K_BRACELET]   = "Egy %s visel a csuklóján.";
+                types_map[K_AMULET]     = "Egy %s visel a nyaka körül.";
+                types_map[K_CLOAK]      = "Egy %s visel.";
+                types_map[K_PANTS]      = "Egy %s visel.";
+                types_map[K_FOOTWEAR]   = "Egy %s visel a lábán.";
+                types_map[K_GLOVE]      = "Egy %s visel a kezén.";
+                types_map[K_CAP]        = "Egy %s visel a fején.";
+                types_map[K_TORSO]      = "Egy %s visel a törzsén.";
+                types_map[K_ARMGUARDS]  = "Egy %s visel az alkarján";
+                types_map[K_SHINGUARDS] = "Egy %s visel a lábszárán.";
+#endif
+                if (!creature->childs.empty ())
+                {
+                    (*ostream) << std::endl;
+                    CInventoryMap inventory_map;
+                    for (CThingListIt i = creature->childs.begin (); i != creature->childs.end (); i++)
+                    {
+                        CThing *th = *i;
+                        if (!th->get_sparam (CItem::K_WEAREDON).empty ())
+                        {
+                            char s[256];
+                            const char *p;
+                            if (types_map.find (th->get_sparam (CItem::K_WEAREDON)) != types_map.end ())
+                            {
+                                p = types_map[th->get_sparam (CItem::K_WEAREDON)].c_str ();
+#if (LANG == ENG)
+                                if (creature->isMale ())
+                                {
+                                    (*ostream) << "He ";
+                                }
+                                else
+                                {
+                                    (*ostream) << "She ";
+                                }
+                                snprintf (s, sizeof (s), p, th->get_name (M_IARTICLE).c_str ());
+                                (*ostream) << s << std::endl;
+#endif
+#if (LANG == HUN)
+                                snprintf (s, sizeof (s), p, th->get_name (M_RAG_T).c_str ());
+                                (*ostream) << Upper (s) << std::endl;
+#endif
+                            }
+                            else
+                            {
+                                std::ostringstream os;
+                                os << "Internal error. Object weared on invalid part." << std::endl;
+                                Log.error (os.str ());
+                            }
+                        }
+                    }
+                }
+            }
+
+            write_to_spectators (os.str (), except);
+            if (thing == this)
+            {
+                (*ostream) << std::endl;
+                cmd_inventory (CMD_INVENTORY, "");
+            }
+#ifdef __DEBUG__
+            (*ostream) << std::endl;
+            (*ostream) << thing->info (4);
+            (*ostream) << std::endl;
+#endif
+        }
+        else
+        {
+#if (LANG == ENG)
+            (*ostream) << C_ERR << "You can't look." << C_RST << std::endl;
+#endif
+#if (LANG == HUN)
+            (*ostream) << C_ERR << "Nem tudod megnézni." << C_RST << std::endl;
+#endif
+        }
+    }
+}
+
+void CCreature::cmd_inventory (const std::string& cmd, const std::string& params)
+{
+    std::ostringstream os;
+    /*os << __INFO__ << __FUNCTION__  << " " << get_name () << " " << cmd << " " << params;
+    Log.debug (os.str ());*/
+    CStringMap types_map;
+#if (LANG == ENG)
+    types_map[K_LEFT_HAND]  = "You wield %s in left hand.";
+    types_map[K_RIGHT_HAND] = "You wield %s in right hand.";
+    types_map[K_TWO_HANDS]  = "You wield %s in hands.";
+    types_map[K_RING]       = "You have %s on either finger.";
+    types_map[K_BRACELET]   = "You have %s on either wrist.";
+    types_map[K_AMULET]     = "You wear %s on neck.";
+    types_map[K_CLOAK]      = "You wear %s.";
+    types_map[K_PANTS]      = "You wear %s.";
+    types_map[K_FOOTWEAR]   = "You wear %s on feet.";
+    types_map[K_GLOVE]      = "You wear %s on hands.";
+    types_map[K_CAP]        = "You wear %s on head.";
+    types_map[K_TORSO]      = "You wear %s on torso.";
+    types_map[K_ARMGUARDS]  = "You wear %s on arm.";
+    types_map[K_SHINGUARDS] = "You wear %s on shin.";
+#endif
+#if (LANG == HUN)
+    types_map[K_LEFT_HAND]  = "Egy %s fogsz a bal kezedben.";
+    types_map[K_RIGHT_HAND] = "Egy %s fogsz a jobb kezedben.";
+    types_map[K_TWO_HANDS]  = "Egy %s fogsz a két kezedben.";
+    types_map[K_RING]       = "Egy %s viselsz az egyik ujjadon.";
+    types_map[K_BRACELET]   = "Egy %s viselsz a csuklódon.";
+    types_map[K_AMULET]     = "Egy %s viselsz a nyakad körül.";
+    types_map[K_CLOAK]      = "Egy %s viselsz.";
+    types_map[K_PANTS]      = "Egy %s viselsz.";
+    types_map[K_FOOTWEAR]   = "Egy %s viselsz a lábadon.";
+    types_map[K_GLOVE]      = "Egy %s viselsz a kezeden.";
+    types_map[K_CAP]        = "Egy %s viselsz a fejeden.";
+    types_map[K_TORSO]      = "Egy %s viselsz a törzseden.";
+    types_map[K_ARMGUARDS]  = "Egy %s viselsz az alkarodon";
+    types_map[K_SHINGUARDS] = "Egy %s viselsz a sípcsontodon.";
+#endif
+    CRegEx regex ("(\\S+)\\s+(\\S+)");
+    if (cmd == CMD_HELP && regex.Matches (params))
+    {
+        std::string help_cmd = regex.GetMatch (params, 1),
+                    help_params = regex.GetMatch (params, 2);
+        if (help_params == CMD_BRIEF)
+        {
+#if (LANG == ENG)
+            (*ostream) << "Draw up an inventory.";
+#endif
+#if (LANG == HUN)
+            (*ostream) << "Leltározás.";
+#endif
+        }
+        else if (help_params == CMD_VERBOSE)
+        {
+#if (LANG == ENG)
+            (*ostream) << "Drawing up an inventory." << std::endl;
+            (*ostream) << "Syntax: " << C_CMD << CMD_INVENTORY << " [-l]" << C_RST << std::endl;
+            (*ostream) << "Switches: " << std::endl;
+            (*ostream) << " -l: make a table" << std::endl;
+            (*ostream) << "Example: " << C_CMD << CMD_INVENTORY << " -l" << C_RST << std::endl;
+#endif
+#if (LANG == HUN)
+            (*ostream) << "Leltározás." << std::endl;
+            (*ostream) << "Szintaktika: " << C_CMD << CMD_INVENTORY << " [-l]" << C_RST << std::endl;
+            (*ostream) << "Kapcsolók: " << std::endl;
+            (*ostream) << " -l: táblázatot készít" << std::endl;
+            (*ostream) << "Például: " << C_CMD << CMD_INVENTORY << " -l" << C_RST << std::endl;
+#endif
+        }
+        return;
+    }
+    bool list = false;
+    if (params == "-l")
+        list = true;
+    CThingList except;
+    except.push_back (this);
+    os.str ("");
+#if (LANG == ENG)
+    (*ostream) << C_DO << "You draw up an inventory: " << C_RST << std::endl;
+    os << C_DO << get_name (M_CAPITAL_FIRST) << " draws up an inventory." << C_RST << std::endl;
+#endif
+#if (LANG == HUN)
+    (*ostream) << C_DO << "Leltározol: " << C_RST << std::endl;
+    os << C_DO << get_name (M_CAPITAL_FIRST) << " leltározik." << C_RST << std::endl;
+#endif
+    write_to_spectators (os.str (), except);
+    if (!childs.empty ())
+    {
+        CInventoryMap inventory_map;
+        float load = 0;
+        for (CThingListIt i = childs.begin (); i != childs.end (); i++)
+        {
+            CThing *th = *i;
+            std::string name = th->get_name ();
+            load += th->get_fparam (CItem::K_WEIGHT);
+            if (inventory_map.find (name) == inventory_map.end ())
+            {
+                inventory_map[name].counter = 1;
+                inventory_map[name].noun = th->get_iparam (K_NOUN);
+                inventory_map[name].price = th->get_fparam (CItem::K_PRICE);
+                inventory_map[name].weight = th->get_fparam (CItem::K_WEIGHT);
+                inventory_map[name].plural = th->get_sparam (K_PLURAL);
+                inventory_map[name].wearedon = th->get_sparam (CItem::K_WEAREDON);
+            }
+            else
+            {
+                inventory_map[name].counter++;
+                // az alabbi specialis eset
+                // ket egyforma targyat (rez gyuru) visel az illeto, az egyiket
+                // elteszi tehat a masodikat viseli -> nem jelenik meg a csillag
+                // a leltarban a nev utan, ha nem kezeljuk az alant lathato modon
+                if (inventory_map[name].wearedon.empty ())
+                {
+                    inventory_map[name].wearedon = th->get_sparam (CItem::K_WEAREDON);
+                }
+            }
+            if (!list && !th->get_sparam (CItem::K_WEAREDON).empty ())
+            {
+                char s[256];
+                const char *p;
+                if (types_map.find (th->get_sparam (CItem::K_WEAREDON)) != types_map.end ())
+                {
+                    p = types_map[th->get_sparam (CItem::K_WEAREDON)].c_str ();
+#if (LANG == ENG)
+                    snprintf (s, sizeof (s), p, th->get_name (M_IARTICLE).c_str ());
+#endif
+#if (LANG == HUN)
+                    snprintf (s, sizeof (s), p, th->get_name (M_RAG_T).c_str ());
+#endif
+                    (*ostream) << Upper (s) << std::endl;
+                }
+                else
+                {
+                    std::ostringstream os;
+                    os << "Internal error. Object weared on invalid part." << std::endl;
+                    Log.error (os.str ());
+                }
+            }
+        }
+        if (list) // -l
+        {
+            CItem *th = new CItem;
+            (*ostream) << C_HL;
+            int w_name = 25;
+#if (LANG == ENG)
+            int w_weight = 6;
+            int w_price = 5;
+            (*ostream) << "  # " << std::left << std::setw (w_name) << "Name" << " " 
+                << std::setw (w_weight) << "Weight" << " " 
+                << std::setw (w_price) << "Price"
+                << std::endl;
+#endif
+#if (LANG == HUN)
+            int w_weight = 5;
+            int w_price = 5;
+            (*ostream) << "Db. " << std::left << std::setw (w_name) << "Név" << " " 
+                << std::setw (w_weight) << "Tömeg" << " " 
+                << std::setw (w_price) << "Érték"
+                << std::endl;
+#endif
+//#endif // GTKMM
+            (*ostream) << C_RST;
+            for (CInventoryMapIt i = inventory_map.begin (); i != inventory_map.end (); i++)
+            {
+                std::string name = i->first;
+                if (!i->second.wearedon.empty ())
+                {
+                    name += "*";
+                }
+                int counter = i->second.counter;
+                float weight = i->second.weight,
+                      price = i->second.price;
+     
+                (*ostream) << std::right << std::setw (3) << counter << " "
+                    << std::left << std::setw (w_name) << name << " " 
+                    << std::setw (w_weight) << static_cast<float> (counter) * weight << " " 
+                    << std::setw (w_price) << th->get_price_str (static_cast<float> (counter) * price) 
+                    << std::endl;
+            }
+            delete th;
+            (*ostream) << std::endl;
+#if (LANG == ENG)
+            (*ostream) << "*: one or more items are weared." << std::endl;
+#endif
+#if (LANG == HUN)
+            (*ostream) << "*: egy vagy több tárgyat viselsz." << std::endl;
+#endif
+        }
+        else
+        {
+#if (LANG == ENG)
+            (*ostream) << "You have ";
+#endif
+#if (LANG == HUN)
+            (*ostream) << "Van nálad ";
+#endif
+            CInventory inv (ostream);
+            inv.inventory_map = inventory_map;
+            inv.write ();
+            (*ostream) << "." << std::endl;
+        }
+        (*ostream) << std::endl;
+#if (LANG == ENG)
+        (*ostream) << "Load: " << load << " " << U_WEIGHT << " (" << std::setprecision (4) << 100.0 * load / get_loadability () << "%)" << std::endl;
+        (*ostream) << "Loadability: " << get_loadability () << " " << U_WEIGHT << std::endl;
+#endif
+#if (LANG == HUN)
+        (*ostream) << "Teher: " << load << " " << U_WEIGHT << " (" << std::setprecision (4) << 100.0 * load / get_loadability () << "%)" << std::endl;
+        (*ostream) << "Terhelhetõség: " << get_loadability () << " " << U_WEIGHT << std::endl;
+#endif
+    }
+    else
+    {
+#if (LANG == ENG)
+        (*ostream) << C_ERR << "You have nothing.";
+#endif
+#if (LANG == HUN)
+        (*ostream) << C_ERR << "Nincs semmid.";
+#endif
+        (*ostream) << C_RST << std::endl;
+    }
+}
+
+void CCreature::cmd_move (const std::string& cmd, const std::string& params)
+{
+    std::ostringstream os;
+    os << __INFO__ << __FUNCTION__  << " "  << get_name () << " " << cmd << " " << params;
+    Log.debug (os.str ());
+    CStringMap exits_map;
+#if (LANG == ENG)
+    exits_map[CMD_NORTH]     = "to north";
+    exits_map[CMD_SOUTH]     = "to south";
+    exits_map[CMD_EAST]      = "to east";
+    exits_map[CMD_WEST]      = "to west";
+    exits_map[CMD_NORTHEAST] = "to northeast";
+    exits_map[CMD_SOUTHEAST] = "to southeast";
+    exits_map[CMD_NORTHWEST] = "to northwest";
+    exits_map[CMD_SOUTHWEST] = "to southwest";
+    exits_map[CMD_IN]        = "in";
+    exits_map[CMD_OUT]       = "out";
+    exits_map[CMD_UP]        = "up";
+    exits_map[CMD_DOWN]      = "down";
+#endif
+#if (LANG == HUN)
+    exits_map[CMD_NORTH]     = "észak felé ";
+    exits_map[CMD_SOUTH]     = "dél felé ";
+    exits_map[CMD_EAST]      = "kelet felé ";
+    exits_map[CMD_WEST]      = "nyugat felé ";
+    exits_map[CMD_NORTHEAST] = "északkelet felé ";
+    exits_map[CMD_SOUTHEAST] = "délkelet felé ";
+    exits_map[CMD_NORTHWEST] = "északnyugat felé ";
+    exits_map[CMD_SOUTHWEST] = "délnyugat felé ";
+    exits_map[CMD_IN]        = "be";
+    exits_map[CMD_OUT]       = "ki";
+    exits_map[CMD_UP]        = "fel";
+    exits_map[CMD_DOWN]      = "le";
+#endif
+    CRegEx regex ("(\\S+)\\s+(\\S+)");
+    if (cmd == CMD_HELP && regex.Matches (params))
+    {
+        std::string help_cmd = regex.GetMatch (params, 1),
+                    help_params = regex.GetMatch (params, 2);
+        if (help_params == CMD_BRIEF)
+        {
+#if (LANG == ENG)
+            (*ostream) << "Move to given direction.";
+#endif
+#if (LANG == HUN)
+            (*ostream) << "Mozgás a megadott irányba.";
+#endif
+        }
+        else if (help_params == CMD_VERBOSE)
+        {
+#if (LANG == ENG)
+            (*ostream) << "Move to given direction." << std::endl;
+            (*ostream) << "Syntax: " << C_CMD << "<direction> [place]" << C_RST << std::endl;
+            (*ostream) << "Example: " << C_CMD "sw mountain" << C_RST << std::endl;
+#endif
+#if (LANG == HUN)
+            (*ostream) << "Mozgás a megadott irányba." << std::endl;
+            (*ostream) << "Szintaktika: " << C_CMD << "<irány> [hely]" << C_RST << std::endl;
+            (*ostream) << "Például: " << C_CMD << "be boltba" << C_RST << std::endl;
+#endif
+            (*ostream) << std::endl;
+            for (CStringMapIt i = exits_map.begin (); i != exits_map.end (); i++)
+            {
+                (*ostream) << std::setw (10) << std::left;
+#if (LANG == ENG)
+                (*ostream) << i->first << " Moving " << i->second << "." << std::endl;
+#endif
+#if (LANG == HUN)
+                (*ostream) << i->first << " " << Upper (i->second) << "megy." << std::endl;
+#endif
+            }
+            (*ostream) << std::endl;
+        }
+        return;
+    }
+    CMap *map = dynamic_cast<CMap*> (parent);
+    if (map == NULL)
+    {
+        std::ostringstream os;
+        os << "Internal error. Dynamic cast failed. Parent is not map." << std::endl;
+        Log.error (os.str ());
+        return;
+    }
+    CSplit split;
+    CStringVector sv = split (K_LISTSEPARATOR, map->get_sparam (K_EXITS));
+    if (!sv.empty ())
+    {
+        bool ok = false;
+        std::string cmd_exit = cmd,
+                    cmd_name = params;
+        for (CStringVectorIt i = sv.begin (); i != sv.end (); i++)
+        {
+            regex.Compile ("^(.*):(.*)$");
+            if (regex.Matches (*i))
+            {
+                std::string exit = regex.GetMatch (*i, 1),
+                            id = regex.GetMatch (*i, 2);
+                if (cmd_exit == exit)
+                {
+                    CThing *thing = find (id, CMap::global_maplist);
+                    if (thing != NULL)
+                    {
+                        //std::cout << __INFO__ << __FUNCTION__ << " map found! name: " << thing->get_name () << std::endl;
+                        if (cmd_name == "" || thing->compare_name (cmd_name))
+                        {
+                            CThingList except;
+                            except.push_back (this);
+                            os.str ("");
+#if (LANG == ENG)
+                            (*ostream) << C_DO << "You go " << exits_map[cmd_exit] << "." << C_RST << std::endl;
+                            os << C_DO << get_name (M_CAPITAL_FIRST) << " go " << exits_map[cmd_exit] << "." << C_RST << std::endl;
+#endif
+#if (LANG == HUN)
+                            (*ostream) << C_DO << Upper (exits_map[cmd_exit]) << "mész." << C_RST << std::endl;
+                            os << C_DO << get_name (M_CAPITAL_FIRST) << " " << exits_map[cmd_exit] << "megy." << C_RST << std::endl;
+#endif
+                            write_to_spectators (os.str (), except);
+                            
+                            //std::cout << __INFO__ << __FUNCTION__ << " move_to " << thing->get_name () << std::endl;
+                            move_to (*thing);
+
+                            os.str ("");
+#if (LANG == ENG)
+                            os << C_DO << get_name (M_IARTICLE | M_CAPITAL_FIRST) << " arrived." << C_RST << std::endl;
+#endif
+#if (LANG == HUN)
+                            os << C_DO << get_name (M_IARTICLE | M_CAPITAL_FIRST) << " érkezik." << C_RST << std::endl;
+#endif
+                            write_to_spectators (os.str (), except);
+
+                            //std::cout << __INFO__ << __FUNCTION__ << " auto cmd_look " << std::endl;
+                            cmd_look (CMD_LOOK, "");
+                            ok = true;
+                            break;
+                        }
+                    }
+                    else
+                    {
+                        os.str ("");
+                        os << __INFO__ << "Exit identifier not found: " << *i;
+                        Log.warn (os.str ());
+                    }
+                }
+            }
+            else
+            {
+                os.str ("");
+                os << __INFO__ << "Invalid exit: " << *i;
+                Log.warn (os.str ());
+            }
+        }
+        if (!ok)
+        {
+            os.str ("");
+#if (LANG == ENG)
+            (*ostream) << C_ERR << "You can't go to this direction." << C_RST << std::endl;
+#endif
+#if (LANG == HUN)
+            (*ostream) << C_ERR << "Nem tudsz abba az irányba menni." << C_RST << std::endl;
+#endif
+        }
+    }
+    else
+    {
+#if (LANG == ENG)
+        (*ostream) << C_ERR << "You can't see exit." << C_RST << std::endl;
+#endif
+#if (LANG == HUN)
+        (*ostream) << C_ERR << "Nem látsz kijáratot." << C_RST << std::endl;
+#endif
+    }
+}
+
+void CCreature::cmd_pickup (const std::string& cmd, const std::string& params)
+{
+    std::ostringstream os;
+    /*os << __INFO__ << __FUNCTION__  << " "  << get_name () << " " << cmd << " " << params;
+    Log.debug (os.str ());*/
+    CRegEx regex ("(\\S+)\\s+(\\S+)");
+    if (cmd == CMD_HELP && regex.Matches (params))
+    {
+        std::string help_cmd = regex.GetMatch (params, 1),
+                    help_params = regex.GetMatch (params, 2);
+        if (help_params == CMD_BRIEF)
+        {
+#if (LANG == ENG)
+            (*ostream) << "Pick up one or more item.";
+#endif
+#if (LANG == HUN)
+            (*ostream) << "Felvesz egy vagy több tárgyat.";
+#endif
+        }
+        else if (help_params == CMD_VERBOSE)
+        {
+#if (LANG == ENG)
+            (*ostream) << "Pick up one or more item." << std::endl;
+            (*ostream) << "Syntax: " << C_CMD << CMD_PICKUP << " [quantity] <item>[, [quantity] <item>]" << C_RST << std::endl;
+            (*ostream) << "Example: " << C_CMD << CMD_PICKUP << " 2 sword" << C_RST << std::endl;
+#endif
+#if (LANG == HUN)
+            (*ostream) << "Felvesz egy vagy több tárgyat." << std::endl;
+            (*ostream) << "Szintaktika: " << C_CMD << CMD_PICKUP << " [darab] <tárgy>[, [darab] <tárgy>]" << C_RST << std::endl;
+            (*ostream) << "Például: " << C_CMD << CMD_PICKUP << " 2 kardot" << C_RST << std::endl;
+#endif
+            (*ostream) << "         " << C_CMD << CMD_PICKUP << " " << CMD_ALL << C_RST << std::endl;
+            (*ostream) << std::endl;
+        }
+        return;
+    }
+    CThingList Childs = parent->childs;
+    Childs.remove (this);
+    if (!Childs.empty ())
+    {
+        CInventoryMap inventory_map;
+        int mode; // mode of get_name ()
+#if (LANG == ENG)
+        mode = M_NORMAL;
+#endif
+#if (LANG == HUN)
+        mode = M_RAG_T;
+#endif
+        CThingList except;
+        except.push_back (this);
+        CStringVector sv;
+        CSplit split;
+        sv = split ("\\s*,\\s*", params);
+        for (unsigned int j = 0; j < sv.size (); j++)
+        {
+            bool found = false;
+            /*os.str ("");
+            os << "sv[" << j << "] = " << sv[j] << std::endl;
+            Log.debug (os.str ());*/
+            CRegEx regex ("^(\\d+)\\s+(.*)$");
+            int qty = 1;
+            std::string name = sv[j];
+            if (regex.Matches (sv[j]))
+            {
+                qty = std::atoi (regex.GetMatch (sv[j], 1).c_str ());
+                name = regex.GetMatch (sv[j], 2);
+            }
+            int counter = 0;
+            float weight = 0;
+            for (CThingListIt i = Childs.begin (); i != Childs.end (); i++)
+            {
+                CThing *th = *i;
+                if ((name == CMD_ALL && th->get_iparam (CItem::K_MOVABLE))|| th->compare_name (name))
+                {
+                    found = true;
+                    if (th->get_iparam (CItem::K_MOVABLE) && th->get_type () == "item" && 
+                            get_load_weight () + th->get_fparam (CItem::K_WEIGHT) <= get_loadability ())
+                    {
+                        std::string name2 = th->get_name (mode);
+                        if (inventory_map.find (name2) == inventory_map.end ())
+                        {
+                            inventory_map[name2].counter = 1;
+                            inventory_map[name2].noun = th->get_iparam (K_NOUN);
+                            //inventory_map[name2].price = th->get_fparam (K_PRICE);
+                            inventory_map[name2].weight = th->get_fparam (CItem::K_WEIGHT);
+                            inventory_map[name2].plural = th->get_sparam (K_PLURAL);
+                        }
+                        else
+                        {
+                            inventory_map[name2].counter++;
+                        }
+                        counter++;
+                        weight += th->get_fparam (CItem::K_WEIGHT);
+                        th->move_to (*this);
+                        if (counter >= qty && name != CMD_ALL)
+                            break;
+                    }
+                    else
+                    {
+#if (LANG == ENG)
+                        (*ostream) << C_ERR << "You can't pick up " << th->get_name (M_ARTICLE) << "." << C_RST << std::endl;
+#endif
+#if (LANG == HUN)
+                        (*ostream) << C_ERR << "Nem tudod felvenni " << th->get_name (M_ARTICLE + M_RAG_T) << "." << C_RST << std::endl;
+#endif
+                    }
+                }
+            }
+            if (!found)
+            {
+#if (LANG == ENG)
+                (*ostream) << C_ERR << "There isn't " << name << " item." << C_RST << std::endl;
+#endif
+#if (LANG == HUN)
+                (*ostream) << C_ERR << "Itt nincs " << name << " tárgy." << C_RST << std::endl;
+#endif
+            }
+        }
+        if (!inventory_map.empty ())
+        {
+            os.str ("");
+#if (LANG == ENG)
+            (*ostream) << C_DO << "You pick up ";
+            os << C_DO << get_name (M_ARTICLE | M_CAPITAL_FIRST) << " picks up ";
+#endif
+#if (LANG == HUN)
+            (*ostream) << C_DO << "Felveszel ";
+            os << C_DO << get_name (M_ARTICLE | M_CAPITAL_FIRST) << " felvesz ";
+#endif
+            CInventory inv;
+            inv.inventory_map = inventory_map;
+            std::string s = inv.write ();
+            (*ostream) << s << "." << C_RST << std::endl;
+            os << s << "." << C_RST << std::endl;
+            write_to_spectators (os.str (), except);
+        }
+    }
+    else
+    {
+#if (LANG == ENG)
+        (*ostream) << C_ERR << "There is nothing." << C_RST << std::endl;
+#endif
+#if (LANG == HUN)
+        (*ostream) << C_ERR << "Itt nincs semmi." << C_RST << std::endl;
+#endif
+    }
+}
+
+void CCreature::cmd_drop (const std::string& cmd, const std::string& params)
+{
+    std::ostringstream os;
+    /*os << __INFO__ << __FUNCTION__  << " "  << get_name () << " " << cmd << " " << params;
+    Log.debug (os.str ());*/
+    CRegEx regex ("(\\S+)\\s+(\\S+)");
+    if (cmd == CMD_HELP && regex.Matches (params))
+    {
+        std::string help_cmd = regex.GetMatch (params, 1),
+                    help_params = regex.GetMatch (params, 2);
+        if (help_params == CMD_BRIEF)
+        {
+#if (LANG == ENG)
+            (*ostream) << "Drop one or more item.";
+#endif
+#if (LANG == HUN)
+            (*ostream) << "Eldob egy vagy több tárgyat.";
+#endif
+        }
+        else if (help_params == CMD_VERBOSE)
+        {
+#if (LANG == ENG)
+            (*ostream) << "Drop one or more item." << std::endl;
+            (*ostream) << "Syntax: " << C_CMD << CMD_DROP << " [quantity] <item>[, [quantity] <item>]" << C_RST << std::endl;
+            (*ostream) << "Example: " << C_CMD << CMD_DROP << " 2 sword" << C_RST << std::endl;
+#endif
+#if (LANG == HUN)
+            (*ostream) << "Eldob egy vagy több tárgyat." << std::endl;
+            (*ostream) << "Szintaktika: " << CMD_DROP << " [darab] <tárgy>[, [darab] <tárgy>]" << std::endl;
+            (*ostream) << "Például: " << CMD_DROP << " 2 kardot" << std::endl;
+#endif
+            (*ostream) << "         " << C_CMD << CMD_DROP << " " << CMD_ALL << C_RST << std::endl;
+            (*ostream) << std::endl;
+        }
+        return;
+    }
+    CThingList Childs = this->childs;
+    if (!Childs.empty ())
+    {
+        CInventoryMap inventory_map;
+        int mode; // mode of get_name ()
+#if (LANG == ENG)
+        mode = M_NORMAL;
+#endif
+#if (LANG == HUN)
+        mode = M_RAG_T;
+#endif
+        CThingList except;
+        except.push_back (this);
+        CStringVector sv;
+        CSplit split;
+        sv = split ("\\s*,\\s*", params);
+        for (unsigned int j = 0; j < sv.size (); j++)
+        {
+            bool found = false;
+            /*os.str ("");
+            os << "sv[" << j << "] = " << sv[j] << std::endl;
+            Log.debug (os.str ());*/
+            CRegEx regex ("^(\\d+)\\s+(.*)$");
+            int qty = 1;
+            std::string name = sv[j];
+            if (regex.Matches (sv[j]))
+            {
+                qty = std::atoi (regex.GetMatch (sv[j], 1).c_str ());
+                name = regex.GetMatch (sv[j], 2);
+            }
+            int counter = 0;
+            for (CThingListIt i = Childs.begin (); i != Childs.end (); i++)
+            {
+                CThing *th = *i;
+                if (name == CMD_ALL || th->compare_name (name))
+                {
+                    if (th->get_iparam (CItem::K_MOVABLE) && th->get_type () == "item")
+                    {
+                        found = true;
+                        if (inventory_map.find (th->get_name (mode)) == inventory_map.end ())
+                        {
+                            inventory_map[th->get_name (mode)].counter = 1;
+                            inventory_map[th->get_name (mode)].noun = th->get_iparam (K_NOUN);
+                            inventory_map[th->get_name (mode)].plural = th->get_sparam (K_PLURAL);
+                        }
+                        else
+                        {
+                            inventory_map[th->get_name (mode)].counter++;
+                        }
+                        counter++;
+                        th->set_sparam (CItem::K_WEAREDON, "");
+                        th->move_to (*parent);
+                        if (counter >= qty && name != CMD_ALL)
+                            break;
+                    }
+                    else
+                    {
+#if (LANG == ENG)
+                        (*ostream) << C_ERR << "You can't drop " << th->get_name (M_ARTICLE) << "." << C_RST << std::endl;
+#endif
+#if (LANG == HUN)
+                        (*ostream) << C_ERR << "Nem tudod eldobni " << th->get_name (M_ARTICLE + M_RAG_T) << "." << C_RST << std::endl;
+#endif
+                    }
+                }
+            }
+            if (!found)
+            {
+#if (LANG == ENG)
+                (*ostream) << C_ERR << "You haven't " << name << " item." << C_RST << std::endl;
+#endif
+#if (LANG == HUN)
+                (*ostream) << C_ERR << "Nincs " << name << " nevû tárgyad." << C_RST << std::endl;
+#endif
+            }
+        }
+        if (!inventory_map.empty ())
+        {
+            os.str ("");
+#if (LANG == ENG)
+            (*ostream) << C_DO << "You drop ";
+            os << C_DO << get_name (M_ARTICLE | M_CAPITAL_FIRST) << " drop ";
+#endif
+#if (LANG == HUN)
+            (*ostream) << C_DO << "Eldobsz ";
+            os << C_DO << get_name (M_ARTICLE | M_CAPITAL_FIRST) << " eldob ";
+#endif
+            CInventory inv;
+            inv.inventory_map = inventory_map;
+            std::string s = inv.write ();
+            (*ostream) << s << "." << C_RST << std::endl;
+            os << s << "." << C_RST << std::endl;
+            write_to_spectators (os.str (), except);
+        }
+    }
+    else
+    {
+#if (LANG == ENG)
+        (*ostream) << C_ERR << "You have nothing." << C_RST << std::endl;
+#endif
+#if (LANG == HUN)
+        (*ostream) << C_ERR << "Nincs semmid." << C_RST << std::endl;
+#endif
+    }
+}
+
+void CCreature::cmd_alias (const std::string& cmd, const std::string& params)
+{
+    /*std::ostringstream os;
+    os << __INFO__ << __FUNCTION__  << " "  << get_name () << " " << cmd << " " << params;
+    Log.debug (os.str ());*/
+    CRegEx regex ("(\\S+)\\s+(\\S+)");
+    if (cmd == CMD_HELP && regex.Matches (params))
+    {
+        std::string help_cmd = regex.GetMatch (params, 1),
+                    help_params = regex.GetMatch (params, 2);
+        if (help_params == CMD_BRIEF)
+        {
+            if (help_cmd == CMD_ALIAS)
+            {
+#if (LANG == ENG)
+                (*ostream) << "Creating and deleting command aliases.";
+#endif
+#if (LANG == HUN)
+                (*ostream) << "Parancsálnevek létrehozása és törlése.";
+#endif
+            }
+            else
+            {
+#if (LANG == ENG)
+                (*ostream) << "Command alias. ";
+#endif
+#if (LANG == HUN)
+                (*ostream) << "Parancsálnév. ";
+#endif
+                (*ostream) << C_HL << help_cmd << C_RST << " = " << C_CMD << alias_map[help_cmd] << C_RST;
+            }
+        }
+        else if (help_params == CMD_VERBOSE)
+        {
+#if (LANG == ENG)
+            (*ostream) << "Creating and deleting command aliases." << std::endl;
+            (*ostream) << "Syntax: " << std::endl;
+            (*ostream) << "Create alias: " << std::endl;
+            (*ostream) << C_CMD << CMD_ALIAS << " <alias_name> <command>" << C_RST << std::endl;
+            (*ostream) << "Delete alias: " << std::endl;
+            (*ostream) << C_CMD << CMD_ALIAS << " <alias_name>" << C_RST << std::endl;
+            (*ostream) << "List aliases: " << std::endl;
+            (*ostream) << C_CMD << CMD_ALIAS << C_RST << std::endl;
+            (*ostream) << "Example: " << C_CMD << CMD_ALIAS << " i inventory -l" << C_RST << std::endl;
+#endif
+#if (LANG == HUN)
+            (*ostream) << "Parancsálnevek létrehozása és törlése." << std::endl;
+            (*ostream) << "Szintaktika: " << std::endl;
+            (*ostream) << "Létrehozás: " << std::endl;
+            (*ostream) << C_CMD << CMD_ALIAS << " <álnév> <parancs>" << C_RST << std::endl;
+            (*ostream) << "Törlés: " << std::endl;
+            (*ostream) << C_CMD << CMD_ALIAS << " <álnév>" << C_RST << std::endl;
+            (*ostream) << "Listázás: " << std::endl;
+            (*ostream) << C_CMD << CMD_ALIAS << C_RST << std::endl;
+            (*ostream) << "Például: " << C_CMD << CMD_ALIAS << " l leltár -l" << C_RST << std::endl;
+#endif
+            (*ostream) << std::endl;
+        }
+        return;
+    }
+    regex.Compile ("^(\\S+)\\s*(.*)$");
+    if (cmd == CMD_ALIAS)
+    {
+        if (params.empty ())
+        {
+            // list aliases
+#if (LANG == ENG)
+            (*ostream) << "Aliases:" << std::endl;
+#endif
+#if (LANG == HUN)
+            (*ostream) << "Álnevek:" << std::endl;
+#endif
+            if (!alias_map.empty ())
+            {
+                for (CStringMapIt i = alias_map.begin (); i != alias_map.end (); i++)
+                {
+                    (*ostream) << C_HL << i->first << C_RST << " = " << C_CMD << i->second << C_RST << std::endl;
+                }
+            }
+            else
+            {
+#if (LANG == ENG)
+                (*ostream) << C_ERR << "No aliases." << C_RST << std::endl;
+#endif
+#if (LANG == HUN)
+                (*ostream) << C_ERR << "Nincsenek álnevek." << C_RST << std::endl;
+#endif
+            }
+        }
+        else if (regex.Matches (params))
+        {
+            std::string alias_name = regex.GetMatch (params, 1),
+                        alias_cmd = regex.GetMatch (params, 2);
+            /*os.str ("");
+            os << "alias: [" << alias_name << "] cmd: [" << alias_cmd << "]" << std::endl;
+            Log.debug (os.str ());*/
+            // finding illegal characters in parameter string
+            if ((int) params.find (K_LISTSEPARATOR) != -1 || (int) params.find (K_LISTSEPARATOR2) != -1 ||
+                    (int) params.find ('\"') != -1)
+            {
+#if (LANG == ENG)
+                (*ostream) << C_ERR << "Illegal character in alias (" << K_LISTSEPARATOR <<
+                    K_LISTSEPARATOR2 << "\")!" << C_RST << std::endl;
+#endif
+#if (LANG == HUN)
+                (*ostream) << C_ERR << "Érvénytelen karakter az álnévben (" << K_LISTSEPARATOR <<
+                    K_LISTSEPARATOR2 << "\")!" << C_RST << std::endl;
+#endif
+                return;
+            }
+            if (!alias_cmd.empty ())
+            {
+                // create/overwrite alias
+                if (parser_map.find (alias_name) == parser_map.end () ||
+                        alias_map.find (alias_name) != alias_map.end ())
+                        //!alias_map[alias_name].empty ())
+                {
+#if (LANG == ENG)
+                    (*ostream) << C_DO << "Creating alias: " << C_HL << alias_name << C_RST << " = " << C_CMD << alias_cmd << C_RST << "." << std::endl;
+#endif
+#if (LANG == HUN)
+                    (*ostream) << C_DO << "Álnév létrehozása: " << C_HL << alias_name << C_RST << " = " << C_CMD << alias_cmd << C_RST << "." << std::endl;
+#endif
+                    // If the functor not exists then we create one...
+                    if (!parser_map[alias_name])
+                    {
+                        parser_map[alias_name] = new CCmdFunctor<CCreature> (this, &CCreature::cmd_alias);
+                    }
+                    alias_map[alias_name] = alias_cmd;
+                }
+                else
+                {
+#if (LANG == ENG)
+                    (*ostream) << C_ERR << "There is already command '" << alias_name << "'." << C_RST << std::endl;
+#endif
+#if (LANG == HUN)
+                    (*ostream) << C_ERR << "Már van ,," << alias_name << "'' parancs." << C_RST << std::endl;
+#endif
+                }
+            }
+            else
+            {
+                // delete alias
+                if (alias_map.find (alias_name) != alias_map.end ())
+                {
+                    alias_map.erase (alias_name);
+                    parser_map.erase (alias_name);
+                }
+                else
+                {
+#if (LANG == ENG)
+                    (*ostream) << C_ERR << "Alias '" << alias_name << "' doesn't exists." << C_RST << std::endl;
+#endif
+#if (LANG == HUN)
+                    (*ostream) << C_ERR << "Nem létezik ,," << alias_name << "'' álnév." << C_RST << std::endl;
+#endif
+                }
+            }
+        }
+        else
+        {
+#if (LANG == ENG)
+            (*ostream) << C_ERR << "Invalid alias parameter. See help: " << C_CMD <<  CMD_HELP << " " << CMD_ALIAS << C_RST << std::endl;
+#endif
+#if (LANG == HUN)
+            (*ostream) << C_ERR << "Érvénytelen álnév paraméter. Nézd meg a súgót: " << C_CMD << CMD_HELP << " " << CMD_ALIAS << C_RST << std::endl;
+#endif
+        }
+    }
+    else
+    {
+        // processing alias
+        std::string text = alias_map[cmd];
+        if (!params.empty ())
+        {
+            text += " " + params;
+        }
+        parser (text);
+    }
+}
+
+void CCreature::cmd_bringout (const std::string& cmd, const std::string& params)
+{
+    /*std::ostringstream os;
+    os << __INFO__ << __FUNCTION__  << " "  << get_name () << " " << cmd << " " << params;
+    Log.debug (os.str ());*/
+    CRegEx regex ("(\\S+)\\s+(\\S+)");
+    CStringMap types_map, types_map2;
+#if (LANG == ENG)
+    types_map[K_ONE_HANDED]     = "You have no more free hand.";
+    types_map[K_TWO_HANDED]     = "You have already %s in hands.";
+    types_map[K_RING]           = "You have already %s on finger.";
+    types_map[K_BRACELET]       = "You wear already %s on wrist.";
+    types_map[K_AMULET]         = "You wear already %s on neck.";
+    types_map[K_CLOAK]          = "You wear already %s.";
+    types_map[K_PANTS]          = "You wear already %s.";
+    types_map[K_FOOTWEAR]       = "You wear already %s on feet.";
+    types_map[K_GLOVE]          = "You wear already %s on hands.";
+    types_map[K_CAP]            = "You wear already %s on head.";
+    types_map[K_TORSO]          = "You wear already %s.";
+    types_map[K_ARMGUARDS]      = "You wear already %s on arms.";
+    types_map[K_SHINGUARDS]     = "You wear already %s on shins.";
+    
+    types_map2[K_LEFT_HAND]     = "You bring out %s and wield in left hand.";
+    types_map2[K_RIGHT_HAND]    = "You bring out %s and wield in rightt hand.";
+    types_map2[K_TWO_HANDS]     = "You bring out %s and wield in both hands.";
+    types_map2[K_RING]          = "You bring out %s and put on one of fingers.";
+    types_map2[K_BRACELET]      = "You bring out %s and put on one of wrist.";
+    types_map2[K_AMULET]        = "You bring out %s and put on neck.";
+    types_map2[K_CLOAK]         = "You bring out %s and wear.";
+    types_map2[K_PANTS]         = "You bring out %s and wear.";
+    types_map2[K_FOOTWEAR]      = "You bring out %s and wear on feet.";
+    types_map2[K_GLOVE]         = "You bring out %s and wear on hands.";
+    types_map2[K_CAP]           = "You bring out %s and wear on head.";
+    types_map2[K_TORSO]         = "You bring out %s and wear.";
+    types_map2[K_ARMGUARDS]     = "You bring out %s and wear on arms.";
+    types_map2[K_SHINGUARDS]    = "You bring out %s and wear on shins.";
+#endif
+#if (LANG == HUN)
+    types_map[K_ONE_HANDED]     = "Már nincs szabad kezed.";
+    types_map[K_TWO_HANDED]     = "Már van egy %s a kezedben.";
+    types_map[K_RING]           = "Már van egy %s az egyik ujjadon.";
+    types_map[K_BRACELET]       = "Már van egy %s a csuklódon.";
+    types_map[K_AMULET]         = "Már van egy %s a nyakad körül.";
+    types_map[K_CLOAK]          = "Már van egy %s rajtad.";
+    types_map[K_PANTS]          = "Már van egy %s rajtad.";
+    types_map[K_FOOTWEAR]       = "Már van egy %s a lábadon.";
+    types_map[K_GLOVE]          = "Már van egy %s a kezeden.";
+    types_map[K_CAP]            = "Már van egy %s a fejeden.";
+    types_map[K_TORSO]          = "Már van egy %s a törzseden.";
+    types_map[K_ARMGUARDS]      = "Már van egy %s az alkarodon.";
+    types_map[K_SHINGUARDS]     = "Már van egy %s a sípcsontodon.";
+
+    types_map2[K_LEFT_HAND]     = "Elõveszed %s és a bal kezedben megfogod.";
+    types_map2[K_RIGHT_HAND]    = "Elõveszed %s és a jobb kezedben megfogod.";
+    types_map2[K_TWO_HANDS]     = "Elõveszed %s és a kezedben megfogod.";
+    types_map2[K_RING]          = "Elõveszed %s és az egyik ujjadra húzod.";
+    types_map2[K_BRACELET]      = "Elõveszed %s és a csuklódra teszed.";
+    types_map2[K_AMULET]        = "Elõveszed %s és felteszed a nyakadra.";
+    types_map2[K_CLOAK]         = "Elõveszed %s és magadra teríted.";
+    types_map2[K_PANTS]         = "Elõveszed %s és felveszed.";
+    types_map2[K_FOOTWEAR]      = "Elõveszed %s és a lábadra húzod.";
+    types_map2[K_GLOVE]         = "Elõveszed %s és a kezedre húzod.";
+    types_map2[K_CAP]           = "Elõveszed %s és a fejedre teszed.";
+    types_map2[K_TORSO]         = "Elõveszed %s és felveszed.";
+    types_map2[K_ARMGUARDS]     = "Elõveszed %s és az alkarodra húzod";
+    types_map2[K_SHINGUARDS]    = "Elõveszed %s és a lábszáradra húzod.";
+#endif
+    if (cmd == CMD_HELP && regex.Matches (params))
+    {
+        std::string help_cmd = regex.GetMatch (params, 1),
+                    help_params = regex.GetMatch (params, 2);
+        if (help_params == CMD_BRIEF)
+        {
+#if (LANG == ENG)
+            (*ostream) << "Wear armours and clothes. Put on jewellery. Wield items.";
+#endif
+#if (LANG == HUN)
+            (*ostream) << "Páncélok, ruhák, ékszerek viselése, fegyverek kézbevétele.";
+#endif
+        }
+        else if (help_params == CMD_VERBOSE)
+        {
+#if (LANG == ENG)
+            (*ostream) << "Wear armours and clothes. Put on jewellery. Wield items." << std::endl;
+            (*ostream) << "Syntax: " << C_CMD << CMD_BRINGOUT << " <item>[, <item>]" << C_RST << std::endl;
+            (*ostream) << "Example: " << C_CMD << CMD_BRINGOUT << " cloak" << C_RST << std::endl;
+#endif
+#if (LANG == HUN)
+            (*ostream) << "Páncélok, ruhák, ékszerek viselése, fegyverek kézbevétele." << std::endl;
+            (*ostream) << "Szintaktika: " << C_CMD << CMD_BRINGOUT << " <tárgy>[, <tárgy>]" << C_RST << std::endl;
+            (*ostream) << "Például: " << C_CMD << CMD_BRINGOUT << " köpeny" << C_RST << std::endl;
+#endif
+            (*ostream) << std::endl;
+        }
+        return;
+    }
+    CStringVector sv;
+    CSplit split;
+    sv = split ("\\s*,\\s*", params);
+    for (unsigned int j = 0; j < sv.size (); j++)
+    {
+        std::string name = sv[j];
+        std::string name_found;
+        bool found = false;
+        bool ok = false;
+        for (CThingListIt i = childs.begin (); i != childs.end (); i++)
+        {
+            CThing *th = *i;
+            bool left_hand = false,
+                 right_hand = false;
+            char ring = 0;
+            char bracelet = 0;
+            if (th->compare_name (name) && 
+                    th->get_sparam (CItem::K_WEAREDON).empty ()) // not weared
+            {
+                found = true;
+#if (LANG == ENG)
+                name_found = th->get_name (M_ARTICLE);
+#endif
+#if (LANG == HUN)
+                name_found = th->get_name (M_ARTICLE | M_RAG_T);
+#endif
+                std::string type = th->get_sparam (K_TYPE);
+                if (!type.empty () && 
+                        (type == K_RING || type == K_BRACELET || type == K_AMULET ||
+                        type == K_CLOAK || type == K_PANTS || type == K_FOOTWEAR ||
+                        type == K_GLOVE || type == K_CAP || type == K_TORSO ||
+                        type == K_ARMGUARDS || type == K_SHINGUARDS || 
+                        type == K_ONE_HANDED || type == K_TWO_HANDED))
+                {
+                    ok = true;
+                    for (CThingListIt j = childs.begin (); j != childs.end (); j++)
+                    {
+                        CThing *th2 = *j;
+                        std::string wearedon = th2->get_sparam (CItem::K_WEAREDON);
+                        if (wearedon == K_RING) ring++;
+                        if (wearedon == K_BRACELET) bracelet++;
+                        if (wearedon == K_LEFT_HAND) left_hand = true;
+                        if (wearedon == K_RIGHT_HAND) right_hand = true;
+                        if (wearedon == type && ((type == K_RING && ring > 1) ||
+                                    ((type == K_BRACELET && bracelet > 1))) ||
+                                (type == K_ONE_HANDED && left_hand && right_hand) ||
+                                (type == K_TWO_HANDED && (left_hand || right_hand)) ||
+                                (type == K_TWO_HANDED && wearedon == K_TWO_HANDS))
+                        {
+                            // Mar visel egy targyat
+                            // You have already wear an item
+                            char s[256];
+                            snprintf (s, sizeof (s), types_map[type].c_str (), th2->get_name ().c_str ());
+                            (*ostream) << s << std::endl;
+                            ok = false;
+                            if (type != K_BRACELET && type != K_RING)
+                            {
+                                break;
+                            }
+                        }
+                    }
+                    if (ok)
+                    {
+                        if (type == K_ONE_HANDED)
+                        {
+                            if (!right_hand)
+                            {
+                                th->set_sparam (CItem::K_WEAREDON, K_RIGHT_HAND);
+                            }
+                            else if (!left_hand)
+                            {
+                                th->set_sparam (CItem::K_WEAREDON, K_LEFT_HAND);
+                            }
+                            else
+                            {
+                                std::ostringstream os;
+                                os << __INFO__ << "Internal error. You have no more hands.";
+                                Log.debug (os.str ());
+                            }
+                        }
+                        else if (type == K_TWO_HANDED)
+                        {
+                            th->set_sparam (CItem::K_WEAREDON, K_TWO_HANDS);
+                        }
+                        else
+                        {
+                            th->set_sparam (CItem::K_WEAREDON, type);
+                        }
+                        std::ostringstream os;
+                        char s[256];
+#if (LANG == ENG)
+                        snprintf (s, sizeof (s), types_map2[th->get_sparam (CItem::K_WEAREDON)].c_str (), th->get_name ().c_str ());
+                        os << C_DO << get_name (M_ARTICLE | M_CAPITAL_FIRST) << " bring out " << th->get_name (M_ARTICLE) << "." << C_RST << std::endl;
+#endif
+#if (LANG == HUN)
+                        snprintf (s, sizeof (s), types_map2[th->get_sparam (CItem::K_WEAREDON)].c_str (), th->get_name (M_ARTICLE | M_RAG_T).c_str ());
+                        os << C_DO << get_name (M_ARTICLE | M_CAPITAL_FIRST) << " elõveszi " << th->get_name (M_ARTICLE | M_RAG_T) << "." << C_RST << std::endl;
+#endif
+                        (*ostream) << C_DO << s << C_RST << std::endl;
+    
+                        CThingList except;
+                        except.push_back (this);
+                        write_to_spectators (os.str (), except, true);
+                    }
+                    break;
+                }
+            }
+        }
+        if (found && !ok)
+        {
+#if (LANG == ENG)
+            (*ostream) << C_ERR << "You cannot wear " << name_found << "." << C_RST << std::endl;
+#endif
+#if (LANG == HUN)
+            (*ostream) << C_ERR << "Nem tudod viselni " << name_found << "." << C_RST << std::endl;
+#endif
+        }
+        if (!found)
+        {
+#if (LANG == ENG)
+            (*ostream) << C_ERR << "You haven't " << name << " item." << C_RST << std::endl;
+#endif
+#if (LANG == HUN)
+            (*ostream) << C_ERR << "Nincs " << name << " nevû tárgyad." << C_RST << std::endl;
+#endif
+        }
+    }
+}
+
+void CCreature::cmd_putaway (const std::string& cmd, const std::string& params)
+{
+    /*std::ostringstream os;
+    os << __INFO__ << __FUNCTION__  << " "  << get_name () << " " << cmd << " " << params;
+    Log.debug (os.str ());*/
+    CRegEx regex ("(\\S+)\\s+(\\S+)");
+    if (cmd == CMD_HELP && regex.Matches (params))
+    {
+        std::string help_cmd = regex.GetMatch (params, 1),
+                    help_params = regex.GetMatch (params, 2);
+        if (help_params == CMD_BRIEF)
+        {
+#if (LANG == ENG)
+            (*ostream) << "Take off armours and clothes. Remove jewellery. Take away weapons.";
+#endif
+#if (LANG == HUN)
+            (*ostream) << "Viselt páncélokat, ruhákat, ékszereket leveszi, fegyvereket elteszi.";
+#endif
+        }
+        else if (help_params == CMD_VERBOSE)
+        {
+#if (LANG == ENG)
+            (*ostream) << "Take off armours and clothes. Remove jewellery. Take away weapons." << std::endl;
+            (*ostream) << "Syntax: " << C_CMD << CMD_PUTAWAY << " <item>[, <item>]" << C_RST << std::endl;
+            (*ostream) << "Example: " << C_CMD << CMD_PUTAWAY << " cloak" << C_RST << std::endl;
+#endif
+#if (LANG == HUN)
+            (*ostream) << "Viselt páncélokat, ruhákat, ékszereket leveszi, fegyvereket elteszi." << std::endl;
+            (*ostream) << "Szintaktika: " << C_CMD << CMD_PUTAWAY << " <tárgy>[, <tárgy>]" << C_RST << std::endl;
+            (*ostream) << "Például: " << C_CMD << CMD_PUTAWAY << " köpeny" << C_RST << std::endl;
+#endif
+            (*ostream) << std::endl;
+        }
+        return;
+    }
+    CStringVector sv;
+    CSplit split;
+    sv = split ("\\s*,\\s*", params);
+    for (unsigned int j = 0; j < sv.size (); j++)
+    {
+        std::string name = sv[j];
+        bool found = false;
+        bool ok = false;
+        for (CThingListIt i = childs.begin (); i != childs.end (); i++)
+        {
+            CThing *th = *i;
+            if (th->compare_name (name))
+            {
+                found = true;
+                std::string type = th->get_sparam (K_TYPE);
+                if (!type.empty () && !th->get_sparam (CItem::K_WEAREDON).empty () &&
+                        (type == K_RING || type == K_BRACELET || type == K_AMULET ||
+                        type == K_CLOAK || type == K_PANTS || type == K_FOOTWEAR ||
+                        type == K_GLOVE || type == K_CAP || type == K_TORSO ||
+                        type == K_ARMGUARDS || type == K_SHINGUARDS || 
+                        type == K_ONE_HANDED || type == K_TWO_HANDED))
+                {
+                    th->set_sparam (CItem::K_WEAREDON, "");
+                    std::ostringstream os;
+#if (LANG == ENG)
+                    (*ostream) << C_DO << "You take away " << th->get_name (M_ARTICLE) << "." << C_RST << std::endl;
+                    os << C_DO << get_name (M_ARTICLE | M_CAPITAL_FIRST) << " takes away " << th->get_name (M_ARTICLE) << "." << C_RST << std::endl;
+#endif
+#if (LANG == HUN)
+                    (*ostream) << C_DO << "Elteszed " << th->get_name (M_ARTICLE | M_RAG_T) << "." << C_RST << std::endl;
+                    os << C_DO << get_name (M_ARTICLE | M_CAPITAL_FIRST) << " elteszi " << th->get_name (M_ARTICLE | M_RAG_T) << "." << C_RST << std::endl;
+#endif
+                    CThingList except;
+                    except.push_back (this);
+                    write_to_spectators (os.str (), except, true);
+                    ok = true;
+                    break;
+                }
+            }
+        }
+        if (!found)
+        {
+#if (LANG == ENG)
+            (*ostream) << C_ERR << "You haven't " << name << " item." << C_RST << std::endl;
+#endif
+#if (LANG == HUN)
+            (*ostream) << C_ERR << "Nincs " << name << " nevû tárgyad." << C_RST << std::endl;
+#endif
+        }
+        if (found && !ok)
+        {
+#if (LANG == ENG)
+            (*ostream) << C_ERR << "You can't take away this item." << C_RST << std::endl;
+#endif
+#if (LANG == HUN)
+            (*ostream) << C_ERR << "Nem tudod eltenni a tárgyat." << C_RST << std::endl;
+#endif
+        }
+    }
+}
+
+void CCreature::cmd_points (const std::string& cmd, const std::string& params)
+{
+    /*std::ostringstream os;
+    os << __INFO__ << __FUNCTION__  << " "  << get_name () << " " << cmd << " " << params;
+    Log.debug (os.str ());*/
+    CRegEx regex ("(\\S+)\\s+(\\S+)");
+    if (cmd == CMD_HELP && regex.Matches (params))
+    {
+        std::string help_cmd = regex.GetMatch (params, 1),
+                    help_params = regex.GetMatch (params, 2);
+        if (help_params == CMD_BRIEF)
+        {
+#if (LANG == ENG)
+            (*ostream) << "Show statistics: strength, hit points, etc.";
+#endif
+#if (LANG == HUN)
+            (*ostream) << "Kiírja az erõt, életerõ pontokat, stb.";
+#endif
+        }
+        else if (help_params == CMD_VERBOSE)
+        {
+#if (LANG == ENG)
+            (*ostream) << "Show statistics: strength, hit points, etc." << std::endl;
+            (*ostream) << "Syntax: " << C_CMD << CMD_POINTS << C_RST << std::endl;
+            (*ostream) << "Example: " << C_CMD << CMD_POINTS << C_RST << std::endl;
+#endif
+#if (LANG == HUN)
+            (*ostream) << "Kiírja az erõt, életerõ pontokat, stb." << std::endl;
+            (*ostream) << "Szintaktika: " << C_CMD << CMD_POINTS << C_RST << std::endl;
+            (*ostream) << "Például: " << C_CMD << CMD_POINTS << C_RST << std::endl;
+#endif
+            (*ostream) << std::endl;
+        }
+        return;
+    }
+
+#if (LANG == ENG)
+    (*ostream) << "You are " << get_name () << "." << std::endl;
+#endif
+#if (LANG == HUN)
+    (*ostream) << get_name (M_CAPITAL_FIRST) << " vagy." << std::endl;
+#endif
+    (*ostream) << std::endl;
+    
+    for (unsigned int i = 0; i < stat_name_vector.size (); i++)
+    {
+        (*ostream) << std::left << std::setw (25) << Upper (stat_name_vector[i]) << get_stat (i) << std::endl;
+        if (i == 6 || i == 10)
+            (*ostream) << std::endl;
+    }
+#ifdef __DEBUG__
+    (*ostream) << std::endl;
+    (*ostream) << info (4);
+    (*ostream) << std::endl;
+#endif
+}
+
+void CCreature::cmd_about (const std::string& cmd, const std::string& params)
+{
+    /*std::ostringstream os;
+    os << __INFO__ << __FUNCTION__  << " "  << get_name () << " " << cmd << " " << params;
+    Log.debug (os.str ());*/
+    CRegEx regex ("(\\S+)\\s+(\\S+)");
+    if (cmd == CMD_HELP && regex.Matches (params))
+    {
+        std::string help_cmd = regex.GetMatch (params, 1),
+                    help_params = regex.GetMatch (params, 2);
+        if (help_params == CMD_BRIEF)
+        {
+#if (LANG == ENG)
+            (*ostream) << "Show information about author and program";
+#endif
+#if (LANG == HUN)
+            (*ostream) << "Kiírja a szerzõ és a program adatait";
+#endif
+        }
+        else if (help_params == CMD_VERBOSE)
+        {
+#if (LANG == ENG)
+            (*ostream) << "Show information about author and program." << std::endl;
+            (*ostream) << "Syntax: " << C_CMD << CMD_ABOUT << C_RST << std::endl;
+            (*ostream) << "Example: " << C_CMD << CMD_ABOUT << C_RST << std::endl;
+#endif
+#if (LANG == HUN)
+            (*ostream) << "Kiírja a szerzõ és a program adatait." << std::endl;
+            (*ostream) << "Szintaktika: " << C_CMD << CMD_ABOUT << C_RST << std::endl;
+            (*ostream) << "Például: " << C_CMD << CMD_ABOUT << C_RST << std::endl;
+#endif
+            (*ostream) << std::endl;
+        }
+        return;
+    }
+
+    (*ostream) << CApp::ABOUT << std::endl;
+}
+
+void CCreature::cmd_help (const std::string& cmd, const std::string& params)
+{
+    /*std::ostringstream os;
+    os << __INFO__ << __FUNCTION__  << " " << get_name () << " " << cmd << " " << params;
+    Log.debug (os.str ());*/
+    CRegEx regex ("(\\S+)\\s+(\\S+)");
+    if (cmd == CMD_HELP && regex.Matches (params))
+    {
+        std::string help_cmd = regex.GetMatch (params, 1),
+                    help_params = regex.GetMatch (params, 2);
+        if (help_params == CMD_BRIEF)
+        {
+#if (LANG == ENG)
+            (*ostream) << "Help system.";
+#endif
+#if (LANG == HUN)
+            (*ostream) << "Súgó rendszer.";
+#endif
+        }
+        else if (help_params == CMD_VERBOSE)
+        {
+#if (LANG == ENG)
+            (*ostream) << "Help system. You can get help for commands." << std::endl;
+            (*ostream) << "Syntax: " << C_CMD << CMD_HELP << " [section]"<< C_RST << std::endl;
+            (*ostream) << "Example: " << C_CMD << CMD_HELP << " " << CMD_LOOK << C_RST << std::endl;
+#endif
+#if (LANG == HUN)
+            (*ostream) << "Súgó rendszer. Segítséget kérhetsz a parancsokról." << std::endl;
+            (*ostream) << "Szintaktika: " << C_CMD << CMD_HELP << " [téma]" << C_RST << std::endl;
+            (*ostream) << "Például: " << C_CMD << CMD_HELP << " " << CMD_LOOK << C_RST << std::endl;
+#endif
+            (*ostream) << std::endl;
+        }
+        return;
+    }
+    if (params == "")
+    {
+#if (LANG == ENG)
+        (*ostream) << "Known commands: " << std::endl;
+#endif
+#if (LANG == HUN)
+        (*ostream) << "Ismert parancsok: " << std::endl;
+#endif
+        for (CFunctorMapIt i = parser_map.begin (); i != parser_map.end (); i++)
+        {
+//#ifdef GTKMM
+//            (*ostream) << i->first << ": ";
+//#else
+            (*ostream) << C_CMD << std::setw (10) << std::left << i->first << C_RST << " ";
+//#endif
+            std::string help_params = i->first + " " + CMD_BRIEF;
+            (*i->second) (CMD_HELP, help_params);
+            (*ostream) << std::endl;
+        }
+    }
+    else
+    {
+        CFunctorMapIt i = parser_map.find (params);
+        if (i != parser_map.end ())
+        {
+            CFunctor *functor = parser_map[params];
+            std::string help_params = i->first + " " + CMD_VERBOSE;
+            (*functor) (CMD_HELP, help_params);
+        }
+        else
+        {
+#if (LANG == ENG)
+            (*ostream) << C_ERR << "Unknown command: " << C_CMD << params << C_RST << std::endl;
+#endif
+#if (LANG == HUN)
+            (*ostream) << C_ERR << "Ismeretlen parancs: " << C_CMD << params << C_RST << std::endl;
+#endif
+        }
+    }
+}
+
+int CCreature::get_weight ()
+{
+    return get_stat (S_BDY) * 8;
+}
+
+float CCreature::get_load_weight ()
+{
+    float load = 0;
+    if (!childs.empty ())
+    {
+        for (CThingListIt i = childs.begin (); i != childs.end (); i++)
+        {
+            CThing *th = *i;
+            //if (th->get_iparam (K_MOVABLE) && th->get_type () == "item")
+            if (th->get_type () == "item")
+                load += th->get_fparam (CItem::K_WEIGHT);
+        }
+    }
+    return load;
+}
+
+float CCreature::get_loadability ()
+{
+    return (get_stat (S_BDY) + get_stat (S_STR)) * 2;
+}
+
+#if 0
+int CCreature::get_hp (bool current)
+{
+    int hp = 0;
+    if (current)
+    {
+        mp = get_stat (S_HP);
+    }
+    else
+    {
+        hp = (get_stat (S_BDY) + get_stat (S_WIL)) * 5;
+    }
+    return hp;
+}
+
+int CCreature::get_mp (bool current)
+{
+    int mp = 0;
+    if (current)
+    {
+        mp = get_stat (S_MP);
+    }
+    else
+    {
+        mp = (get_stat (S_INT) + get_stat (S_WIL)) * 5;
+    }
+    return mp;
+}
+
+int CCreature::get_attack ()
+{
+    return (get_stat (S_STR) + get_stat (S_DEX)); // + képzettség szintje * 2
+}
+
+int CCreature::get_defense ()
+{
+    return (get_stat (S_BDY) + get_stat (S_DEX)); // + képzettség szintje * 2
+}
+#endif
+
+int CCreature::get_stat (int stat_type)
+{
+    int stat;
+    switch (stat_type)
+    {
+        case S_MAX_HP:
+            stat = (get_stat (S_BDY) + get_stat (S_WIL)) * 5;
+            break;
+        case S_MAX_MP:
+            stat = (get_stat (S_INT) + get_stat (S_WIL)) * 5;
+            break;
+        case S_ATTACK:
+            stat = (get_stat (S_STR) + get_stat (S_DEX)); // + képzettség szintje * 2
+            break;
+        case S_DEFENSE:
+            stat = (get_stat (S_BDY) + get_stat (S_DEX)); // + képzettség szintje * 2
+            break;
+        default:
+            stat = CThing::get_stat (stat_type);
+            break;
+    }
+    if (!childs.empty ())
+    {
+        for (CThingListIt i = childs.begin (); i != childs.end (); i++)
+        {
+            CThing *th = *i;
+            if (th->get_type () == "item" && !th->get_sparam (CItem::K_WEAREDON).empty ())
+                stat += th->get_stat (stat_type);
+        }
+    }
+    return stat;
+}
+

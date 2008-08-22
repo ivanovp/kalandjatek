@@ -1,0 +1,12 @@
+/*
+ * File:        thing.h
+ * Purpose:     Object class header
+ * Author:      Peter Ivanov
+ * Modified by:
+ * Created:     2005/01/13
+ * ID:          $Id$
+ * Copyright:   (C) Peter Ivanov, 2005
+ * Licence:     GPL
+ */
+
+

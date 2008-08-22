@@ -1,0 +1,21 @@
+Osztályonként külön értelmezõ (parser)
+Különbözõ csapatok. Csapattagok egymásnak adhatnak parancsokat (a többiek
+értelmezõjének tudnak parancsot adni). Osztályonként lista, hogy milyen
+parancsokat engedélyeznek a csapatnak/személyeknek.
+
+A constructor egy listához/map-hoz adja a parancsokat és a hozzátartozó
+handler-eket!
+
+A parancsok feldolgozás után egy várakozási sorba (queue) vagy listába 
+kerülnek és a do_something dolgozza fel. A listában szerepel, hogy mikor
+került be a listába a parancs és esetleg az, hogy mikor kell vérgehajtani.
+
+Nem játékos élõlényeknek is ostream-jük, de amit abba irányítunk az a
+/dev/null-ba kerül.
+
+A fajok és képzettségek esetleg kasztok is a CThing-bõl származnak és 
+egyszerûen a childs-hoz adódnak.
+
+Hõmérséklet: megfagyhat és megfõhet az ember -> megfelelõ ruházat
+Éhezés, szomjazás
+
