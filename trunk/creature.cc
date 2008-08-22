@@ -4,7 +4,7 @@
  * Author:      Peter Ivanov
  * Modified by:
  * Created:     2005/04/13
- * Last modify: 2008-08-22 11:35:14 ivanovp {Time-stamp}
+ * Last modify: 2008-08-22 13:51:09 ivanovp {Time-stamp}
  * Copyright:   (C) Peter Ivanov, 2005
  * Licence:     GPL
  */
@@ -13,6 +13,7 @@
 #include <iomanip>
 #include <cstdlib>
 #include <cstdio>  // snprintf
+#include <assert.h>
 
 #include "debug.h"
 #include "item.h"
@@ -24,13 +25,13 @@
 #include "trans.h" // uppercase
 #include "inv.h"
 #include "colors.h"
-#include "nullstream.h"
 #include "app.h" // ABOUT
 
 /// Unit of weight
 #define U_WEIGHT        "kg"
 
 CThingList CCreature::global_creaturelist;
+NullStream CCreature::nullstream;
 
 #if (LANG == ENG)
 const std::string CCreature::CMD_SAY         = "say";
@@ -108,15 +109,13 @@ const std::string CCreature::K_TWO_HANDS     = "two hands";     // mindket kez
 
 void CCreature::init ()
 {
-    /*std::ostringstream os;
-    os << __INFO__ << __FUNCTION__ << " sn: " << get_sn ();
-    Log.debug (os.str ());*/
+    type = "creature";
     global_creaturelist.push_back (this);
     spectator = false;
-    // \todo TODO Default otream works only under *nix systems. Implement onullstream!
+    // Default otream works only under *nix systems.
     //ostream = new std::ofstream ("/dev/null");
-    ostream = new NullStream;
-    //ostream = &std::cout;
+    // ostream is necessary because of characters' random event: random say, move, etc.
+    ostream = &nullstream;
     // setting default parser_map
     parser_map[CMD_SAY] = new CCmdFunctor<CCreature> (this, &CCreature::cmd_say);
     parser_map[CMD_LOOK] = new CCmdFunctor<CCreature> (this, &CCreature::cmd_look);
@@ -299,21 +298,31 @@ void CCreature::set_aliases (std::string aliases)
 {
     CStringVector sv;
     CSplit split;
-    sv = split (K_LISTSEPARATOR, aliases);
-    for (CStringVectorIt i = sv.begin (); i != sv.end (); i++)
+
+    if (!ostream)
     {
-        CRegEx regex ("^(.*)" K_LISTSEPARATOR2 "(.*)$");
-        if (regex.Matches (*i))
+        std::ostringstream os;
+        os << __INFO__ << "Output stream has not initialized yet!";
+        Log.error (os.str ());
+    }
+    else
+    {
+        sv = split (K_LISTSEPARATOR, aliases);
+        for (CStringVectorIt i = sv.begin (); i != sv.end (); i++)
         {
-            std::string alias = regex.GetMatch (*i, 1),
-                        cmd = regex.GetMatch (*i, 2);
-            cmd_alias (CMD_ALIAS, alias + " " + cmd);
-        }
-        else
-        {
-            std::ostringstream os;
-            os << __INFO__ << "Invalid alias: " << *i;
-            Log.error (os.str ());
+            CRegEx regex ("^(.*)" K_LISTSEPARATOR2 "(.*)$");
+            if (regex.Matches (*i))
+            {
+                std::string alias = regex.GetMatch (*i, 1),
+                    cmd = regex.GetMatch (*i, 2);
+                cmd_alias (CMD_ALIAS, alias + " " + cmd);
+            }
+            else
+            {
+                std::ostringstream os;
+                os << __INFO__ << "Invalid alias: " << *i;
+                Log.error (os.str ());
+            }
         }
     }
 }
@@ -612,12 +621,15 @@ void CCreature::write_to_spectators (const std::string& text, CThingList& except
             creature = dynamic_cast<CCreature*> (*i);
             if (creature != NULL)
             {
-                *(creature->ostream) << text;
+                if (creature->ostream != NULL)
+                {
+                    *(creature->ostream) << text;
+                }
             }
             else
             {
                 std::ostringstream os;
-                os << __INFO__ << "Internal error. Dynamic cast failed. Not creature in global_spectator_thinglist.";
+                os << __INFO__ << "Internal error. Dynamic cast failed. The item is not a creature in the global_spectator_thinglist.";
                 Log.error (os.str ());
             }
         }
@@ -626,9 +638,7 @@ void CCreature::write_to_spectators (const std::string& text, CThingList& except
 
 void CCreature::cmd_say (const std::string& cmd, const std::string& params)
 {
-    /*std::ostringstream os;
-    os << __INFO__ << __FUNCTION__ << " " << get_name () << " " << cmd << " " << params;
-    Log.debug (os.str ());*/
+    assert (ostream != NULL);
     CRegEx regex ("(\\S+)\\s+(\\S+)");
     if (cmd == CMD_HELP && regex.Matches (params))
     {
@@ -704,9 +714,7 @@ void CCreature::cmd_say (const std::string& cmd, const std::string& params)
 
 void CCreature::cmd_look (const std::string& cmd, const std::string& params)
 {
-    /*std::ostringstream os;
-    os << __INFO__ << __FUNCTION__ << " " << get_name () << " " << cmd << " " << params;
-    Log.debug (os.str ());*/
+    assert (ostream != NULL);
     CRegEx regex ("(\\S+)\\s+(\\S+)");
     if (cmd == CMD_HELP && regex.Matches (params))
     {
@@ -892,11 +900,6 @@ void CCreature::cmd_look (const std::string& cmd, const std::string& params)
         if (regex.Matches (params))
         {
             long sn = atol (regex.GetMatch (params, 1).c_str ());
-            /*
-            std::ostringstream os;
-            os << "Searching for serial number " << sn << "." << std::endl;
-            Log.debug (os.str ());
-            */
             for (CThingListIt i = global_thinglist.begin (); i != global_thinglist.end (); i++)
             {
                 if ((*i)->get_sn () == sn)
@@ -954,36 +957,36 @@ void CCreature::cmd_look (const std::string& cmd, const std::string& params)
             {
                 CStringMap types_map;
 #if (LANG == ENG)
-                types_map[K_LEFT_HAND]  = "wields %s in the left hand.";
-                types_map[K_RIGHT_HAND] = "wields %s in the right hand.";
-                types_map[K_TWO_HANDS]  = "wields %s in the hands.";
-                types_map[CItem::K_RING]       = "has %s on a finger.";
-                types_map[CItem::K_BRACELET]   = "has %s on a wrist.";
-                types_map[CItem::K_AMULET]     = "wears %s on the neck.";
-                types_map[CItem::K_CLOAK]      = "wears %s.";
-                types_map[CItem::K_PANTS]      = "wears %s.";
-                types_map[CItem::K_FOOTWEAR]   = "wears %s on the feet.";
-                types_map[CItem::K_GLOVE]      = "wears %s on the hands.";
-                types_map[CItem::K_CAP]        = "wears %s on the head.";
-                types_map[CItem::K_TORSO]      = "wears %s on the torso.";
-                types_map[CItem::K_ARMGUARDS]  = "wears %s on the arm.";
-                types_map[CItem::K_SHINGUARDS] = "wears %s on the shin.";
+                types_map[K_LEFT_HAND]          = "wields %s in the left hand.";
+                types_map[K_RIGHT_HAND]         = "wields %s in the right hand.";
+                types_map[K_TWO_HANDS]          = "wields %s in the hands.";
+                types_map[CItem::K_RING]        = "has %s on a finger.";
+                types_map[CItem::K_BRACELET]    = "has %s on a wrist.";
+                types_map[CItem::K_AMULET]      = "wears %s on the neck.";
+                types_map[CItem::K_CLOAK]       = "wears %s.";
+                types_map[CItem::K_PANTS]       = "wears %s.";
+                types_map[CItem::K_FOOTWEAR]    = "wears %s on the feet.";
+                types_map[CItem::K_GLOVE]       = "wears %s on the hands.";
+                types_map[CItem::K_CAP]         = "wears %s on the head.";
+                types_map[CItem::K_TORSO]       = "wears %s on the torso.";
+                types_map[CItem::K_ARMGUARDS]   = "wears %s on the arm.";
+                types_map[CItem::K_SHINGUARDS]  = "wears %s on the shin.";
 #endif
 #if (LANG == HUN)
-                types_map[K_LEFT_HAND]  = "Egy %s fog a bal kezében.";
-                types_map[K_RIGHT_HAND] = "Egy %s fog a jobb kezében.";
-                types_map[K_TWO_HANDS]  = "Egy %s fog a két kezében.";
-                types_map[CItem::K_RING]       = "Egy %s visel az egyik ujján.";
-                types_map[CItem::K_BRACELET]   = "Egy %s visel a csuklóján.";
-                types_map[CItem::K_AMULET]     = "Egy %s visel a nyaka körül.";
-                types_map[CItem::K_CLOAK]      = "Egy %s visel.";
-                types_map[CItem::K_PANTS]      = "Egy %s visel.";
-                types_map[CItem::K_FOOTWEAR]   = "Egy %s visel a lábán.";
-                types_map[CItem::K_GLOVE]      = "Egy %s visel a kezén.";
-                types_map[CItem::K_CAP]        = "Egy %s visel a fején.";
-                types_map[CItem::K_TORSO]      = "Egy %s visel a törzsén.";
-                types_map[CItem::K_ARMGUARDS]  = "Egy %s visel az alkarján";
-                types_map[CItem::K_SHINGUARDS] = "Egy %s visel a lábszárán.";
+                types_map[K_LEFT_HAND]          = "Egy %s fog a bal kezében.";
+                types_map[K_RIGHT_HAND]         = "Egy %s fog a jobb kezében.";
+                types_map[K_TWO_HANDS]          = "Egy %s fog a két kezében.";
+                types_map[CItem::K_RING]        = "Egy %s visel az egyik ujján.";
+                types_map[CItem::K_BRACELET]    = "Egy %s visel a csuklóján.";
+                types_map[CItem::K_AMULET]      = "Egy %s visel a nyaka körül.";
+                types_map[CItem::K_CLOAK]       = "Egy %s visel.";
+                types_map[CItem::K_PANTS]       = "Egy %s visel.";
+                types_map[CItem::K_FOOTWEAR]    = "Egy %s visel a lábán.";
+                types_map[CItem::K_GLOVE]       = "Egy %s visel a kezén.";
+                types_map[CItem::K_CAP]         = "Egy %s visel a fején.";
+                types_map[CItem::K_TORSO]       = "Egy %s visel a törzsén.";
+                types_map[CItem::K_ARMGUARDS]   = "Egy %s visel az alkarján";
+                types_map[CItem::K_SHINGUARDS]  = "Egy %s visel a lábszárán.";
 #endif
                 if (!creature->childs.empty ())
                 {
@@ -1053,41 +1056,40 @@ void CCreature::cmd_look (const std::string& cmd, const std::string& params)
 
 void CCreature::cmd_inventory (const std::string& cmd, const std::string& params)
 {
+    assert (ostream != NULL);
     std::ostringstream os;
-    /*os << __INFO__ << __FUNCTION__  << " " << get_name () << " " << cmd << " " << params;
-    Log.debug (os.str ());*/
     CStringMap types_map;
 #if (LANG == ENG)
-    types_map[K_LEFT_HAND]  = "You wield %s in left hand.";
-    types_map[K_RIGHT_HAND] = "You wield %s in right hand.";
-    types_map[K_TWO_HANDS]  = "You wield %s in hands.";
-    types_map[CItem::K_RING]       = "You have %s on either finger.";
-    types_map[CItem::K_BRACELET]   = "You have %s on either wrist.";
-    types_map[CItem::K_AMULET]     = "You wear %s on neck.";
-    types_map[CItem::K_CLOAK]      = "You wear %s.";
-    types_map[CItem::K_PANTS]      = "You wear %s.";
-    types_map[CItem::K_FOOTWEAR]   = "You wear %s on feet.";
-    types_map[CItem::K_GLOVE]      = "You wear %s on hands.";
-    types_map[CItem::K_CAP]        = "You wear %s on head.";
-    types_map[CItem::K_TORSO]      = "You wear %s on torso.";
-    types_map[CItem::K_ARMGUARDS]  = "You wear %s on arm.";
-    types_map[CItem::K_SHINGUARDS] = "You wear %s on shin.";
+    types_map[K_LEFT_HAND]          = "You wield %s in left hand.";
+    types_map[K_RIGHT_HAND]         = "You wield %s in right hand.";
+    types_map[K_TWO_HANDS]          = "You wield %s in hands.";
+    types_map[CItem::K_RING]        = "You have %s on either finger.";
+    types_map[CItem::K_BRACELET]    = "You have %s on either wrist.";
+    types_map[CItem::K_AMULET]      = "You wear %s on neck.";
+    types_map[CItem::K_CLOAK]       = "You wear %s.";
+    types_map[CItem::K_PANTS]       = "You wear %s.";
+    types_map[CItem::K_FOOTWEAR]    = "You wear %s on feet.";
+    types_map[CItem::K_GLOVE]       = "You wear %s on hands.";
+    types_map[CItem::K_CAP]         = "You wear %s on head.";
+    types_map[CItem::K_TORSO]       = "You wear %s on torso.";
+    types_map[CItem::K_ARMGUARDS]   = "You wear %s on arm.";
+    types_map[CItem::K_SHINGUARDS]  = "You wear %s on shin.";
 #endif
 #if (LANG == HUN)
-    types_map[K_LEFT_HAND]  = "Egy %s fogsz a bal kezedben.";
-    types_map[K_RIGHT_HAND] = "Egy %s fogsz a jobb kezedben.";
-    types_map[K_TWO_HANDS]  = "Egy %s fogsz a két kezedben.";
-    types_map[CItem::K_RING]       = "Egy %s viselsz az egyik ujjadon.";
-    types_map[CItem::K_BRACELET]   = "Egy %s viselsz a csuklódon.";
-    types_map[CItem::K_AMULET]     = "Egy %s viselsz a nyakad körül.";
-    types_map[CItem::K_CLOAK]      = "Egy %s viselsz.";
-    types_map[CItem::K_PANTS]      = "Egy %s viselsz.";
-    types_map[CItem::K_FOOTWEAR]   = "Egy %s viselsz a lábadon.";
-    types_map[CItem::K_GLOVE]      = "Egy %s viselsz a kezeden.";
-    types_map[CItem::K_CAP]        = "Egy %s viselsz a fejeden.";
-    types_map[CItem::K_TORSO]      = "Egy %s viselsz a törzseden.";
-    types_map[CItem::K_ARMGUARDS]  = "Egy %s viselsz az alkarodon";
-    types_map[CItem::K_SHINGUARDS] = "Egy %s viselsz a sípcsontodon.";
+    types_map[K_LEFT_HAND]          = "Egy %s fogsz a bal kezedben.";
+    types_map[K_RIGHT_HAND]         = "Egy %s fogsz a jobb kezedben.";
+    types_map[K_TWO_HANDS]          = "Egy %s fogsz a két kezedben.";
+    types_map[CItem::K_RING]        = "Egy %s viselsz az egyik ujjadon.";
+    types_map[CItem::K_BRACELET]    = "Egy %s viselsz a csuklódon.";
+    types_map[CItem::K_AMULET]      = "Egy %s viselsz a nyakad körül.";
+    types_map[CItem::K_CLOAK]       = "Egy %s viselsz.";
+    types_map[CItem::K_PANTS]       = "Egy %s viselsz.";
+    types_map[CItem::K_FOOTWEAR]    = "Egy %s viselsz a lábadon.";
+    types_map[CItem::K_GLOVE]       = "Egy %s viselsz a kezeden.";
+    types_map[CItem::K_CAP]         = "Egy %s viselsz a fejeden.";
+    types_map[CItem::K_TORSO]       = "Egy %s viselsz a törzseden.";
+    types_map[CItem::K_ARMGUARDS]   = "Egy %s viselsz az alkarodon";
+    types_map[CItem::K_SHINGUARDS]  = "Egy %s viselsz a sípcsontodon.";
 #endif
     CRegEx regex ("(\\S+)\\s+(\\S+)");
     if (cmd == CMD_HELP && regex.Matches (params))
@@ -1124,8 +1126,10 @@ void CCreature::cmd_inventory (const std::string& cmd, const std::string& params
     }
     bool list = false;
     if (params == "-l")
+    {
         list = true;
-    CThingList except;
+    }
+    CThingList except; // list of exceptions
     except.push_back (this);
     os.str ("");
 #if (LANG == ENG)
@@ -1144,6 +1148,10 @@ void CCreature::cmd_inventory (const std::string& cmd, const std::string& params
         for (CThingListIt i = childs.begin (); i != childs.end (); i++)
         {
             CThing *th = *i;
+            if (th->get_type () != "item") 
+            {
+                continue;
+            }
             std::string name = th->get_name ();
             load += th->get_fparam (CItem::K_WEIGHT);
             if (inventory_map.find (name) == inventory_map.end ())
@@ -1192,6 +1200,7 @@ void CCreature::cmd_inventory (const std::string& cmd, const std::string& params
         }
         if (list) // -l
         {
+            // creating a table of items
             CItem *th = new CItem;
             (*ostream) << C_HL;
             int w_name = 25;
@@ -1211,7 +1220,6 @@ void CCreature::cmd_inventory (const std::string& cmd, const std::string& params
                 << std::setw (w_price) << "Érték"
                 << std::endl;
 #endif
-//#endif // GTKMM
             (*ostream) << C_RST;
             for (CInventoryMapIt i = inventory_map.begin (); i != inventory_map.end (); i++)
             {
@@ -1276,6 +1284,7 @@ void CCreature::cmd_inventory (const std::string& cmd, const std::string& params
 
 void CCreature::cmd_move (const std::string& cmd, const std::string& params)
 {
+    assert (ostream != NULL);
     std::ostringstream os;
     os << __INFO__ << __FUNCTION__  << " "  << get_name () << " " << cmd << " " << params;
     Log.debug (os.str ());
@@ -1449,6 +1458,7 @@ void CCreature::cmd_move (const std::string& cmd, const std::string& params)
 
 void CCreature::cmd_pickup (const std::string& cmd, const std::string& params)
 {
+    assert (ostream != NULL);
     std::ostringstream os;
     /*os << __INFO__ << __FUNCTION__  << " "  << get_name () << " " << cmd << " " << params;
     Log.debug (os.str ());*/
@@ -1597,6 +1607,7 @@ void CCreature::cmd_pickup (const std::string& cmd, const std::string& params)
 
 void CCreature::cmd_drop (const std::string& cmd, const std::string& params)
 {
+    assert (ostream != NULL);
     std::ostringstream os;
     /*os << __INFO__ << __FUNCTION__  << " "  << get_name () << " " << cmd << " " << params;
     Log.debug (os.str ());*/
@@ -1742,6 +1753,7 @@ void CCreature::cmd_alias (const std::string& cmd, const std::string& params)
     /*std::ostringstream os;
     os << __INFO__ << __FUNCTION__  << " "  << get_name () << " " << cmd << " " << params;
     Log.debug (os.str ());*/
+    assert (ostream != NULL);
     CRegEx regex ("(\\S+)\\s+(\\S+)");
     if (cmd == CMD_HELP && regex.Matches (params))
     {
@@ -1920,9 +1932,8 @@ void CCreature::cmd_alias (const std::string& cmd, const std::string& params)
 
 void CCreature::cmd_bringout (const std::string& cmd, const std::string& params)
 {
-    /*std::ostringstream os;
-    os << __INFO__ << __FUNCTION__  << " "  << get_name () << " " << cmd << " " << params;
-    Log.debug (os.str ());*/
+    assert (ostream != NULL);
+
     CRegEx regex ("(\\S+)\\s+(\\S+)");
     CStringMap types_map, types_map2;
 #if (LANG == ENG)
@@ -2145,9 +2156,8 @@ void CCreature::cmd_bringout (const std::string& cmd, const std::string& params)
 
 void CCreature::cmd_putaway (const std::string& cmd, const std::string& params)
 {
-    /*std::ostringstream os;
-    os << __INFO__ << __FUNCTION__  << " "  << get_name () << " " << cmd << " " << params;
-    Log.debug (os.str ());*/
+    assert (ostream != NULL);
+
     CRegEx regex ("(\\S+)\\s+(\\S+)");
     if (cmd == CMD_HELP && regex.Matches (params))
     {
@@ -2241,9 +2251,8 @@ void CCreature::cmd_putaway (const std::string& cmd, const std::string& params)
 
 void CCreature::cmd_points (const std::string& cmd, const std::string& params)
 {
-    /*std::ostringstream os;
-    os << __INFO__ << __FUNCTION__  << " "  << get_name () << " " << cmd << " " << params;
-    Log.debug (os.str ());*/
+    assert (ostream != NULL);
+
     CRegEx regex ("(\\S+)\\s+(\\S+)");
     if (cmd == CMD_HELP && regex.Matches (params))
     {
@@ -2298,9 +2307,8 @@ void CCreature::cmd_points (const std::string& cmd, const std::string& params)
 
 void CCreature::cmd_about (const std::string& cmd, const std::string& params)
 {
-    /*std::ostringstream os;
-    os << __INFO__ << __FUNCTION__  << " "  << get_name () << " " << cmd << " " << params;
-    Log.debug (os.str ());*/
+    assert (ostream != NULL);
+
     CRegEx regex ("(\\S+)\\s+(\\S+)");
     if (cmd == CMD_HELP && regex.Matches (params))
     {
@@ -2337,9 +2345,8 @@ void CCreature::cmd_about (const std::string& cmd, const std::string& params)
 
 void CCreature::cmd_help (const std::string& cmd, const std::string& params)
 {
-    /*std::ostringstream os;
-    os << __INFO__ << __FUNCTION__  << " " << get_name () << " " << cmd << " " << params;
-    Log.debug (os.str ());*/
+    assert (ostream != NULL);
+
     CRegEx regex ("(\\S+)\\s+(\\S+)");
     if (cmd == CMD_HELP && regex.Matches (params))
     {
@@ -2424,9 +2431,10 @@ float CCreature::get_load_weight ()
         for (CThingListIt i = childs.begin (); i != childs.end (); i++)
         {
             CThing *th = *i;
-            //if (th->get_iparam (K_MOVABLE) && th->get_type () == "item")
             if (th->get_type () == "item")
+            {
                 load += th->get_fparam (CItem::K_WEIGHT);
+            }
         }
     }
     return load;
@@ -2436,46 +2444,6 @@ float CCreature::get_loadability ()
 {
     return (get_stat (S_BDY) + get_stat (S_STR)) * 2;
 }
-
-#if 0
-int CCreature::get_hp (bool current)
-{
-    int hp = 0;
-    if (current)
-    {
-        mp = get_stat (S_HP);
-    }
-    else
-    {
-        hp = (get_stat (S_BDY) + get_stat (S_WIL)) * 5;
-    }
-    return hp;
-}
-
-int CCreature::get_mp (bool current)
-{
-    int mp = 0;
-    if (current)
-    {
-        mp = get_stat (S_MP);
-    }
-    else
-    {
-        mp = (get_stat (S_INT) + get_stat (S_WIL)) * 5;
-    }
-    return mp;
-}
-
-int CCreature::get_attack ()
-{
-    return (get_stat (S_STR) + get_stat (S_DEX)); // + képzettség szintje * 2
-}
-
-int CCreature::get_defense ()
-{
-    return (get_stat (S_BDY) + get_stat (S_DEX)); // + képzettség szintje * 2
-}
-#endif
 
 int CCreature::get_stat (int stat_type)
 {
@@ -2504,7 +2472,9 @@ int CCreature::get_stat (int stat_type)
         {
             CThing *th = *i;
             if (th->get_type () == "item" && !th->get_sparam (CItem::K_WEAREDON).empty ())
+            {
                 stat += th->get_stat (stat_type);
+            }
         }
     }
     return stat;

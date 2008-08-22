@@ -4,7 +4,7 @@
  * Author:      Peter Ivanov
  * Modified by:
  * Created:     2005/04/18
- * Last modify: 2008-08-21 10:43:13 ivanovp {Time-stamp}
+ * Last modify: 2008-08-22 12:40:34 ivanovp {Time-stamp}
  * Copyright:   (C) Peter Ivanov, 2005
  * Licence:     GPL
  */
@@ -94,7 +94,7 @@ bool CTrans::set_lists (const std::string& _l1, const std::string& _l2)
     return lists_ok;
 }
    
-int CTrans::tr (std::string& text, int flags)
+int CTrans::tr (std::string& text, flags_t flags)
 {
     s = "";
     int c; // counting replaced characters
@@ -137,7 +137,7 @@ int CTrans::tr (std::string& text, int flags)
     return c;
 }
 
-int CTrans::tr (const std::string& l1, const std::string& l2, std::string& text, int flags)
+int CTrans::tr (const std::string& l1, const std::string& l2, std::string& text, flags_t flags)
 {
     set_lists (l1, l2);
     return tr (text);

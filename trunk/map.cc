@@ -4,7 +4,7 @@
  * Author:      Peter Ivanov
  * Modified by:
  * Created:     2005/04/13
- * Last modify: 2008-08-22 11:40:14 ivanovp {Time-stamp}
+ * Last modify: 2008-08-22 13:50:41 ivanovp {Time-stamp}
  * Copyright:   (C) Peter Ivanov, 2005
  * Licence:     GPL
  */
@@ -18,6 +18,7 @@ CThingList CMap::global_maplist;
 
 void CMap::init ()
 {
+    type = "map";
     global_maplist.push_back (this);
 }
 

@@ -4,7 +4,7 @@
  * Author:      Peter Ivanov
  * Modified by:
  * Created:     2005/04/18
- * Last modify: 2008-08-21 10:43:16 ivanovp {Time-stamp}
+ * Last modify: 2008-08-22 12:44:43 ivanovp {Time-stamp}
  * Copyright:   (C) Peter Ivanov, 2005
  * Licence:     GPL
  */
@@ -53,7 +53,7 @@ private:
     std::string compile_list (const std::string& list);
     
 public:
-    enum
+    typedef enum
     {
         /// Default mode.
         TR_NORMAL = 0,
@@ -76,7 +76,7 @@ public:
          * the same character are squashed down to a single instance of the character.
          */
         TR_SQUASH = 4
-    };
+    } flags_t;
 
     /// Constructor.
     CTrans ();
@@ -102,28 +102,28 @@ public:
     /**
      * Translates text using search and replacement lists.
      * \param text Text to be translating.
-     * \param flags See int.
+     * \param flags @see flags_t
      * \return If lists are valid: number of replaced characters. If lists are invalid: -1
      */
-    int tr (std::string& text, int flags = TR_NORMAL);
+    int tr (std::string& text, flags_t flags = TR_NORMAL);
 
     /**
      * Translates text using search and replacement lists.
      * \param l1 Search list.
      * \param l2 Replacement list.
      * \param text Text to be translating.
-     * \param flags See int.
+     * \param flags @ee flags_t.
      * \return If lists are valid: number of replaced characters. If lists are invalid: -1
      */
-    int tr (const std::string& l1, const std::string& l2, std::string& text, int flags = TR_NORMAL);
+    int tr (const std::string& l1, const std::string& l2, std::string& text, flags_t flags = TR_NORMAL);
 
     /**
      * Translates text using search and replacement lists.
      * \param text Text to be translating.
-     * \param flags See int.
+     * \param flags @see flags_t
      * \return If lists are valid: number of replaced characters. If lists are invalid: -1
      */
-    int operator() (std::string& text, int flags = TR_NORMAL)
+    int operator() (std::string& text, flags_t flags = TR_NORMAL)
     { 
         return tr (text, flags);
     };
@@ -133,10 +133,10 @@ public:
      * \param l1 Search list.
      * \param l2 Replacement list.
      * \param text Text to be translating.
-     * \param flags See int.
+     * \param flags @see flags_t
      * \return If lists are valid: number of replaced characters. If lists are invalid: -1
      */
-    int operator() (const std::string& l1, const std::string& l2, std::string& text, int flags = TR_NORMAL)
+    int operator() (const std::string& l1, const std::string& l2, std::string& text, flags_t flags = TR_NORMAL)
     { 
         return tr (l1, l2, text, flags);
     };
