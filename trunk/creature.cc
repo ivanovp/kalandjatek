@@ -4,7 +4,7 @@
  * Author:      Peter Ivanov
  * Modified by:
  * Created:     2005/04/13
- * Last modify: 2008-08-22 13:51:09 ivanovp {Time-stamp}
+ * Last modify: 2008-08-22 15:02:28 ivanovp {Time-stamp}
  * Copyright:   (C) Peter Ivanov, 2005
  * Licence:     GPL
  */
@@ -58,12 +58,13 @@ const std::string CCreature::CMD_POINTS      = "points";
 const std::string CCreature::CMD_ABOUT       = "about";
 const std::string CCreature::CMD_HELP        = "help";
 const std::string CCreature::CMD_HELP2       = "?";
+const std::string CCreature::CMD_INFO        = "info";
 // parameters
 const std::string CCreature::CMD_SELF        = "myself";
 const std::string CCreature::CMD_ALL         = "all";
 const std::string CCreature::CMD_BRIEF       = "-brief";
 const std::string CCreature::CMD_VERBOSE     = "-verbose";
-#endif
+#endif // (LANG == ENG)
 #if (LANG == HUN)
 const std::string CCreature::CMD_SAY         = "mond";
 const std::string CCreature::CMD_LOOK        = "néz";
@@ -89,12 +90,13 @@ const std::string CCreature::CMD_POINTS      = "pontok";
 const std::string CCreature::CMD_ABOUT       = "névjegy";
 const std::string CCreature::CMD_HELP        = "súgó";
 const std::string CCreature::CMD_HELP2       = "?";
+const std::string CCreature::CMD_INFO        = "info";
 // parameters;
 const std::string CCreature::CMD_SELF        = "magam";
 const std::string CCreature::CMD_ALL         = "mindent";
 const std::string CCreature::CMD_BRIEF       = "-rövid";
 const std::string CCreature::CMD_VERBOSE     = "-teljes";
-#endif
+#endif // (LANG == HUN)
 
 const std::string CCreature::K_SEX           = "iSex";
 const std::string CCreature::K_RANDOMMOVE    = "iRandomMove";
@@ -142,6 +144,7 @@ void CCreature::init ()
 
     parser_map[CMD_HELP] = new CCmdFunctor<CCreature> (this, &CCreature::cmd_help);
     parser_map[CMD_HELP2] = new CCmdFunctor<CCreature> (this, &CCreature::cmd_help);
+    parser_map[CMD_INFO] = new CCmdFunctor<CCreature> (this, &CCreature::cmd_info);
 }
 
 CCreature::CCreature () : CThing::CThing ()
@@ -916,7 +919,7 @@ void CCreature::cmd_look (const std::string& cmd, const std::string& params)
             if (thing == this)
             {
 #if (LANG == ENG)
-                (*ostream) << C_DO << "You look self." << C_RST << std::endl;
+                (*ostream) << C_DO << "You look yourself." << C_RST << std::endl;
                 (*ostream) << C_DO << "You are " << get_name () << "." << C_RST << std::endl;
                 os << C_DO << get_name (M_ARTICLE | M_CAPITAL_FIRST) << " looks self." << C_RST << std::endl;
 #endif
@@ -1129,6 +1132,16 @@ void CCreature::cmd_inventory (const std::string& cmd, const std::string& params
     {
         list = true;
     }
+    else
+    {
+#if (LANG == ENG)
+        (*ostream) << C_ERR << "Invalid parameter. See help: " << C_CMD <<  CMD_HELP << " " << CMD_INVENTORY << C_RST << std::endl;
+#endif // (LANG == ENG)
+#if (LANG == HUN)
+        (*ostream) << C_ERR << "Ismeretlen parametér. Nézd meg a súgót: " << C_CMD <<  CMD_HELP << " " << CMD_INVENTORY << C_RST << std::endl;
+#endif // (LANG == HUN)
+        return;
+    }
     CThingList except; // list of exceptions
     except.push_back (this);
     os.str ("");
@@ -1249,6 +1262,7 @@ void CCreature::cmd_inventory (const std::string& cmd, const std::string& params
         }
         else
         {
+            // without -l, normal mode
 #if (LANG == ENG)
             (*ostream) << "You have ";
 #endif
@@ -2416,6 +2430,77 @@ void CCreature::cmd_help (const std::string& cmd, const std::string& params)
 #endif
         }
     }
+}
+
+void CCreature::cmd_info (const std::string& cmd, const std::string& params)
+{
+    assert (ostream != NULL);
+
+    CRegEx regex ("(\\S+)\\s+(\\S+)");
+    if (cmd == CMD_HELP && regex.Matches (params))
+    {
+        std::string help_cmd = regex.GetMatch (params, 1),
+                    help_params = regex.GetMatch (params, 2);
+        if (help_params == CMD_BRIEF)
+        {
+#if (LANG == ENG)
+            (*ostream) << "Show debug information about the program.";
+#endif
+#if (LANG == HUN)
+            (*ostream) << "Hibajavításhoz hasznos adatokat ír ki.";
+#endif
+        }
+        else if (help_params == CMD_VERBOSE)
+        {
+#if (LANG == ENG)
+            (*ostream) << "Show debug information about the program.";
+            (*ostream) << "Syntax: " << C_CMD << CMD_INFO << C_RST << std::endl;
+            (*ostream) << "Example: " << C_CMD << CMD_INFO << C_RST << std::endl;
+#endif
+#if (LANG == HUN)
+            (*ostream) << "Hibajavításhoz hasznos adatokat ír ki.";
+            (*ostream) << "Szintaktika: " << C_CMD << CMD_INFO << C_RST << std::endl;
+            (*ostream) << "Például: " << C_CMD << CMD_INFO << C_RST << std::endl;
+#endif
+            (*ostream) << std::endl;
+        }
+        return;
+    }
+    int verbose_level = 3;
+    if (params.empty ())
+    {
+        (*ostream) << info (verbose_level) << std::endl;
+        (*ostream) << parent->info (verbose_level) << std::endl;
+    }
+    else if (params == "*")
+    {
+        for (CThingListIt i = global_thinglist.begin (); i != global_thinglist.end (); i++)
+        {
+            (*ostream) << (*i)->info (verbose_level);
+            (*ostream) << std::endl;
+        }
+    }
+    else
+    {
+        CStringVector sv;
+        CSplit split;
+        sv = split ("\\s*,\\s*", params);
+        for (unsigned int j = 0; j < sv.size (); j++)
+        {
+        }
+    }
+#if 0
+    else
+    {
+#if (LANG == ENG)
+        (*ostream) << C_ERR << "Invalid parameter. See help: " << C_CMD <<  CMD_HELP << " " << CMD_INFO << C_RST << std::endl;
+#endif // (LANG == ENG)
+#if (LANG == HUN)
+        (*ostream) << C_ERR << "Ismeretlen parametér. Nézd meg a súgót: " << C_CMD <<  CMD_HELP << " " << CMD_INFO << C_RST << std::endl;
+#endif // (LANG == HUN)
+        return;
+    }
+#endif
 }
 
 int CCreature::get_weight ()

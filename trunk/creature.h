@@ -4,7 +4,7 @@
  * Author:      Peter Ivanov
  * Modified by:
  * Created:     2005/04/13
- * Last modify: 2008-08-22 13:51:29 ivanovp {Time-stamp}
+ * Last modify: 2008-08-22 14:31:11 ivanovp {Time-stamp}
  * Copyright:   (C) Peter Ivanov, 2005
  * Licence:     GPL
  */
@@ -108,6 +108,7 @@ public:
     static const std::string CMD_ABOUT;
     static const std::string CMD_HELP;
     static const std::string CMD_HELP2;
+    static const std::string CMD_INFO;
     // parameters
     static const std::string CMD_SELF;
     static const std::string CMD_ALL;
@@ -280,6 +281,11 @@ public:
      * Shows help.
      */
     void cmd_help (const std::string& cmd, const std::string& params);
+    
+    /**
+     * Shows debug info.
+     */
+    void cmd_info (const std::string& cmd, const std::string& params);
     
     /**
      * Calculate weight of creature (without load)

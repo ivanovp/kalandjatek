@@ -4,7 +4,7 @@
  * Author:      Peter Ivanov
  * Modified by:
  * Created:     2005/04/14
- * Last modify: 2008-08-22 13:09:51 ivanovp {Time-stamp}
+ * Last modify: 2008-08-22 14:24:22 ivanovp {Time-stamp}
  * Copyright:   (C) Peter Ivanov, 2005
  * Licence:     GPL
  */
@@ -208,22 +208,28 @@ void CApp::init_universe ()
         smap[K_ALIASES] = DEFAULT_ALIASES;
     }
     std::string aliases = smap[K_ALIASES];
+#ifdef GTKMM
     player->set_ostream (&player_os);
+    player->set_spectator (true);
+#endif
     player->set_aliases (aliases);
 #ifdef __DEBUG__
-#define PLAYER2_ID      "farkas"
+    const std::string PLAYER2_ID = "farkas";
     player2 = dynamic_cast<CCreature*> (finder->find (PLAYER2_ID, *universe));
     if (player2 == NULL)
     {
 #if (LANG == ENG)
-        Log.fatal ("'" PLAYER2_ID "' identifier not found! Exiting.");
+        Log.fatal ("'" + PLAYER2_ID + "' identifier not found! Exiting.");
 #endif
 #if (LANG == HUN)
-        Log.fatal ("'" PLAYER2_ID "' azonosító nem létezik! Kilépek.");
+        Log.fatal ("'" + PLAYER2_ID + "' azonosító nem létezik! Kilépek.");
 #endif
         exit (-1);
     }
+#ifdef GTKMM
     player2->set_ostream (&player2_os);
+    player2->set_spectator (true);
+#endif
     player2->set_aliases (aliases);
 #endif
     // Initialize random number generator.
@@ -597,11 +603,6 @@ void CApp::init_window ()
     // Setting entry default
     set_focus (*entry);
 
-    player->set_spectator (true);
-#ifdef __DEBUG__
-    player2->set_ostream (&player2_os);
-    player2->set_spectator (true);
-#endif
     player->parser (CCreature::CMD_LOOK);
     if (!player_os.str ().empty ())
     {
@@ -818,10 +819,6 @@ void CApp::run ()
 #endif
     
     player->parser (CCreature::CMD_LOOK);
-    // writing respone to the console
-    //std::cout << os.str () << std::endl;
-    // clearing ouput string stream buffer
-    //os.str ("");
 
     char buf[256]; // input buffer
     //std::string input;
@@ -863,12 +860,14 @@ void CApp::run ()
         {
 #ifdef __DEBUG__
             if (buf[0] == '!')
+            {
                 std::cout << show_universe (buf[1] >= '0' && buf[1] <= '9' ? buf[1] - '0' : 2);
-            else
-            if (buf[0] == '@')
+            }
+            else if (buf[0] == '@')
+            {
                 std::cout << player->info (buf[1] >= '0' && buf[1] <= '9' ? buf[1] - '0' : 4) << std::endl;
-            else
-            if (buf[0] == ':')
+            }
+            else if (buf[0] == ':') // control second player
             {
                 //buf = buf.substr (1, buf.size () - 1);
                 buf[0] = ' ';
@@ -877,12 +876,7 @@ void CApp::run ()
             else
 #endif
             // otherwise forwarding command to parser
-            //player->parser (input);
             player->parser (buf);
-            // writing respone to the console
-            //std::cout << player_os.str () << std::endl;
-            // clearing ouput string stream buffer
-            //player_os.str ("");
 #ifdef __DEBUG__
             std::string player2_out = player2_os.str ();
             if (player2_out.size () > 0) 
