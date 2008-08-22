@@ -4,7 +4,7 @@
  * Author:      Peter Ivanov
  * Modified by:
  * Created:     2005/04/18
- * Last modify: 2008-08-21 10:41:37 ivanovp {Time-stamp}
+ * Last modify: 2008-08-22 17:08:09 ivanovp {Time-stamp}
  * Copyright:   (C) Peter Ivanov, 2005
  * Licence:     GPL
  */
@@ -94,6 +94,7 @@ int main(int argc, char* argv[])
 class CFunctor
 {
 public:
+    virtual ~CFunctor () {};
     /// Call using operator.
     virtual void operator() (const std::string& string1, const std::string& string2)=0;
     /// Call using function.
