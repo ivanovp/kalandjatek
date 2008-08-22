@@ -4,7 +4,7 @@
  * Author:      Peter Ivanov
  * Modified by:
  * Created:     2005/04/13
- * Last modify: 2008-08-22 09:36:46 ivanovp {Time-stamp}
+ * Last modify: 2008-08-22 11:35:24 ivanovp {Time-stamp}
  * Copyright:   (C) Peter Ivanov, 2005
  * Licence:     GPL
  */
@@ -81,38 +81,46 @@ private:
 
 public:
     // commands
-    static const char* CMD_SAY;
-    static const char* CMD_LOOK;
-    static const char* CMD_INVENTORY;
-    static const char* CMD_NORTH;
-    static const char* CMD_SOUTH;
-    static const char* CMD_EAST;
-    static const char* CMD_WEST;
-    static const char* CMD_NORTHEAST;
-    static const char* CMD_SOUTHEAST;
-    static const char* CMD_NORTHWEST;
-    static const char* CMD_SOUTHWEST;
-    static const char* CMD_IN;
-    static const char* CMD_OUT;
-    static const char* CMD_UP;
-    static const char* CMD_DOWN;
-    static const char* CMD_PICKUP;
-    static const char* CMD_DROP;
-    static const char* CMD_ALIAS;
-    static const char* CMD_BRINGOUT;
-    static const char* CMD_PUTAWAY;
-    static const char* CMD_POINTS;
-    static const char* CMD_ABOUT;
-    static const char* CMD_HELP;
-    static const char* CMD_HELP2;
+    static const std::string CMD_SAY;
+    static const std::string CMD_LOOK;
+    static const std::string CMD_INVENTORY;
+    static const std::string CMD_NORTH;
+    static const std::string CMD_SOUTH;
+    static const std::string CMD_EAST;
+    static const std::string CMD_WEST;
+    static const std::string CMD_NORTHEAST;
+    static const std::string CMD_SOUTHEAST;
+    static const std::string CMD_NORTHWEST;
+    static const std::string CMD_SOUTHWEST;
+    static const std::string CMD_IN;
+    static const std::string CMD_OUT;
+    static const std::string CMD_UP;
+    static const std::string CMD_DOWN;
+    static const std::string CMD_PICKUP;
+    static const std::string CMD_DROP;
+    static const std::string CMD_ALIAS;
+    static const std::string CMD_BRINGOUT;
+    static const std::string CMD_PUTAWAY;
+    static const std::string CMD_POINTS;
+    static const std::string CMD_ABOUT;
+    static const std::string CMD_HELP;
+    static const std::string CMD_HELP2;
     // parameters
-    static const char* CMD_SELF;
-    static const char* CMD_ALL;
-    static const char* CMD_BRIEF;
-    static const char* CMD_VERBOSE;
+    static const std::string CMD_SELF;
+    static const std::string CMD_ALL;
+    static const std::string CMD_BRIEF;
+    static const std::string CMD_VERBOSE;
 
-    static const char* K_SEX;
-    static const char* K_RANDOMMOVE;
+    // CCreature keywords
+    static const std::string K_SEX;
+    static const std::string K_RANDOMMOVE;
+    static const std::string K_WEAR;
+    static const std::string K_RACE;
+    static const std::string K_RANDOMSAY;
+    // wearing types
+    static const std::string K_LEFT_HAND;
+    static const std::string K_RIGHT_HAND;
+    static const std::string K_TWO_HANDS;
 
     static CThingList global_creaturelist;
 

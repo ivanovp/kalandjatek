@@ -4,7 +4,7 @@
  * Author:      Peter Ivanov
  * Modified by:
  * Created:     2005/01/13
- * Last modify: 2008-08-22 09:43:15 ivanovp {Time-stamp}
+ * Last modify: 2008-08-22 11:40:44 ivanovp {Time-stamp}
  * Copyright:   (C) Peter Ivanov, 2005
  * Licence:     GPL
  */
@@ -50,30 +50,31 @@ private:
     void init ();
 
 public:
-    static const char* K_NAME;
-    static const char* K_DESCR;
-    static const char* K_ALTNAME;
-    static const char* K_RAGOK;
-    static const char* K_PLURAL;
-    static const char* K_CHILDS;
-    static const char* K_BODY;
-    static const char* K_STRENGTH;
-    static const char* K_DEXTERITY;
-    static const char* K_PERCEPTION;
-    static const char* K_INTELLIGENCE;
-    static const char* K_WILLPOWER;
-    static const char* K_CHARISMA;
-    static const char* K_BDY;
-    static const char* K_STR;
-    static const char* K_DEX;
-    static const char* K_PER;
-    static const char* K_INT;
-    static const char* K_WIL;
-    static const char* K_CHA;
-    static const char* K_HP;
-    static const char* K_MP;
-    static const char* K_ATTACK;
-    static const char* K_DEFENSE;
+    static const std::string K_NAME;
+    static const std::string K_NOUN;
+    static const std::string K_DESCR;
+    static const std::string K_ALTNAME;
+    static const std::string K_RAGOK;
+    static const std::string K_PLURAL;
+    static const std::string K_CHILDS;
+    static const std::string K_BODY;
+    static const std::string K_STRENGTH;
+    static const std::string K_DEXTERITY;
+    static const std::string K_PERCEPTION;
+    static const std::string K_INTELLIGENCE;
+    static const std::string K_WILLPOWER;
+    static const std::string K_CHARISMA;
+    static const std::string K_BDY;
+    static const std::string K_STR;
+    static const std::string K_DEX;
+    static const std::string K_PER;
+    static const std::string K_INT;
+    static const std::string K_WIL;
+    static const std::string K_CHA;
+    static const std::string K_HP;
+    static const std::string K_MP;
+    static const std::string K_ATTACK;
+    static const std::string K_DEFENSE;
 
     /// Last used serial number.
     static signed long last_sn;

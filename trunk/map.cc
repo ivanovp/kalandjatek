@@ -4,7 +4,7 @@
  * Author:      Peter Ivanov
  * Modified by:
  * Created:     2005/04/13
- * Last modify: 2008-08-21 10:42:50 ivanovp {Time-stamp}
+ * Last modify: 2008-08-22 11:40:14 ivanovp {Time-stamp}
  * Copyright:   (C) Peter Ivanov, 2005
  * Licence:     GPL
  */
@@ -13,6 +13,7 @@
 #include "map.h"
 #include "debug.h"
 
+const std::string CMap::K_EXITS = "sExits";        // kijáratok
 CThingList CMap::global_maplist;
 
 void CMap::init ()

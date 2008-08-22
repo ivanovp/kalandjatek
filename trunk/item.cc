@@ -4,7 +4,7 @@
  * Author:      Peter Ivanov
  * Modified by:
  * Created:     2005/04/13
- * Last modify: 2008-08-22 09:45:50 ivanovp {Time-stamp}
+ * Last modify: 2008-08-22 11:38:35 ivanovp {Time-stamp}
  * Copyright:   (C) Peter Ivanov, 2005
  * Licence:     GPL
  */
@@ -15,11 +15,30 @@
 #include "lang.h"
 #include "keyword.h"
 
-const char* CItem::K_PRICE    = "fPrice";       // ár
-const char* CItem::K_WEIGHT   = "fWeight";      // tömeg
-const char* CItem::K_MOVABLE  = "iMovable";     // mozgatható/felvehetõ tárgy
-const char* CItem::K_VISIBLE  = "iVisible";     // ,,néz'' paranccsal látható
-const char* CItem::K_WEAREDON = "sWearedOn";    // min viseli a tárgyat (nem a konfig fájlban használatos)
+const std::string CItem::K_PRICE      = "fPrice";       // ar
+const std::string CItem::K_WEIGHT     = "fWeight";      // tomeg
+const std::string CItem::K_MOVABLE    = "iMovable";     // mozgathato/felveheto targy (creature can move it)
+const std::string CItem::K_VISIBLE    = "iVisible";     // ,,nez'' paranccsal lathato (can be seen with command "look")
+const std::string CItem::K_WEAREDON   = "sWearedOn";    // min viseli a tagyat (nem a konfig fajlban hasznalatos)
+
+// CItem keywords
+const std::string CItem::K_TYPE       = "sType";
+
+const std::string CItem::K_RING       = "ring";         // gyuru
+const std::string CItem::K_BRACELET   = "bracelet";     // karkoto
+const std::string CItem::K_AMULET     = "amulet";       // nyaklanc
+const std::string CItem::K_CLOAK      = "cloak";        // kopeny/csuha
+const std::string CItem::K_PANTS      = "pants";        // nadrag
+const std::string CItem::K_FOOTWEAR   = "footwear";     // labbeli
+const std::string CItem::K_GLOVE      = "glove";        // kesztyu
+const std::string CItem::K_CAP        = "cap";          // kalap/sapka
+const std::string CItem::K_TORSO      = "torso";        // torzs/torzo (mellvert)
+const std::string CItem::K_ARMGUARDS  = "armguards";    // alkarvedo
+const std::string CItem::K_SHINGUARDS = "shinguards";   // labszarvedo
+const std::string CItem::K_ONE_HANDED = "one handed";   // egykezes (fegyver)
+const std::string CItem::K_TWO_HANDED = "two handed";   // ketkezes (fegyver)
+const std::string CItem::K_CURRENCY   = "currency";     // fizetoeszkoz
+const std::string CItem::K_KEY        = "key";          // kulcs
 
 CThingList CItem::global_itemlist;
 

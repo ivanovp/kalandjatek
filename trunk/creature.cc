@@ -4,7 +4,7 @@
  * Author:      Peter Ivanov
  * Modified by:
  * Created:     2005/04/13
- * Last modify: 2008-08-22 10:23:40 ivanovp {Time-stamp}
+ * Last modify: 2008-08-22 11:35:14 ivanovp {Time-stamp}
  * Copyright:   (C) Peter Ivanov, 2005
  * Licence:     GPL
  */
@@ -33,70 +33,78 @@
 CThingList CCreature::global_creaturelist;
 
 #if (LANG == ENG)
-const char* CCreature::CMD_SAY         = "say";
-const char* CCreature::CMD_LOOK        = "look";
-const char* CCreature::CMD_INVENTORY   = "inventory";
-const char* CCreature::CMD_NORTH       = "n";
-const char* CCreature::CMD_SOUTH       = "s";
-const char* CCreature::CMD_EAST        = "e";
-const char* CCreature::CMD_WEST        = "w";
-const char* CCreature::CMD_NORTHEAST   = "ne";
-const char* CCreature::CMD_SOUTHEAST   = "se";
-const char* CCreature::CMD_NORTHWEST   = "nw";
-const char* CCreature::CMD_SOUTHWEST   = "sw";
-const char* CCreature::CMD_IN          = "in";
-const char* CCreature::CMD_OUT         = "out";
-const char* CCreature::CMD_UP          = "up";
-const char* CCreature::CMD_DOWN        = "down";
-const char* CCreature::CMD_PICKUP      = "pickup";
-const char* CCreature::CMD_DROP        = "drop";
-const char* CCreature::CMD_ALIAS       = "alias";
-const char* CCreature::CMD_BRINGOUT    = "bringout";
-const char* CCreature::CMD_PUTAWAY     = "putaway";
-const char* CCreature::CMD_POINTS      = "points";
-const char* CCreature::CMD_ABOUT       = "about";
-const char* CCreature::CMD_HELP        = "help";
-const char* CCreature::CMD_HELP2       = "?";
+const std::string CCreature::CMD_SAY         = "say";
+const std::string CCreature::CMD_LOOK        = "look";
+const std::string CCreature::CMD_INVENTORY   = "inventory";
+const std::string CCreature::CMD_NORTH       = "n";
+const std::string CCreature::CMD_SOUTH       = "s";
+const std::string CCreature::CMD_EAST        = "e";
+const std::string CCreature::CMD_WEST        = "w";
+const std::string CCreature::CMD_NORTHEAST   = "ne";
+const std::string CCreature::CMD_SOUTHEAST   = "se";
+const std::string CCreature::CMD_NORTHWEST   = "nw";
+const std::string CCreature::CMD_SOUTHWEST   = "sw";
+const std::string CCreature::CMD_IN          = "in";
+const std::string CCreature::CMD_OUT         = "out";
+const std::string CCreature::CMD_UP          = "up";
+const std::string CCreature::CMD_DOWN        = "down";
+const std::string CCreature::CMD_PICKUP      = "pickup";
+const std::string CCreature::CMD_DROP        = "drop";
+const std::string CCreature::CMD_ALIAS       = "alias";
+const std::string CCreature::CMD_BRINGOUT    = "bringout";
+const std::string CCreature::CMD_PUTAWAY     = "putaway";
+const std::string CCreature::CMD_POINTS      = "points";
+const std::string CCreature::CMD_ABOUT       = "about";
+const std::string CCreature::CMD_HELP        = "help";
+const std::string CCreature::CMD_HELP2       = "?";
 // parameters
-const char* CCreature::CMD_SELF        = "myself";
-const char* CCreature::CMD_ALL         = "all";
-const char* CCreature::CMD_BRIEF       = "-brief";
-const char* CCreature::CMD_VERBOSE     = "-verbose";
+const std::string CCreature::CMD_SELF        = "myself";
+const std::string CCreature::CMD_ALL         = "all";
+const std::string CCreature::CMD_BRIEF       = "-brief";
+const std::string CCreature::CMD_VERBOSE     = "-verbose";
 #endif
 #if (LANG == HUN)
-const char* CCreature::CMD_SAY         = "mond";
-const char* CCreature::CMD_LOOK        = "néz";
-const char* CCreature::CMD_INVENTORY   = "leltár";
-const char* CCreature::CMD_NORTH       = "é";
-const char* CCreature::CMD_SOUTH       = "d";
-const char* CCreature::CMD_EAST        = "k";
-const char* CCreature::CMD_WEST        = "ny";
-const char* CCreature::CMD_NORTHEAST   = "ék";
-const char* CCreature::CMD_SOUTHEAST   = "dk";
-const char* CCreature::CMD_NORTHWEST   = "ény";
-const char* CCreature::CMD_SOUTHWEST   = "dny";
-const char* CCreature::CMD_IN          = "be";
-const char* CCreature::CMD_OUT         = "ki";
-const char* CCreature::CMD_UP          = "fel";
-const char* CCreature::CMD_DOWN        = "le";
-const char* CCreature::CMD_PICKUP      = "felvesz";
-const char* CCreature::CMD_DROP        = "eldob";
-const char* CCreature::CMD_ALIAS       = "álnév";
-const char* CCreature::CMD_BRINGOUT    = "elõvesz";
-const char* CCreature::CMD_PUTAWAY     = "eltesz";
-const char* CCreature::CMD_POINTS      = "pontok";
-const char* CCreature::CMD_ABOUT       = "névjegy";
-const char* CCreature::CMD_HELP        = "súgó";
-const char* CCreature::CMD_HELP2       = "?";
+const std::string CCreature::CMD_SAY         = "mond";
+const std::string CCreature::CMD_LOOK        = "néz";
+const std::string CCreature::CMD_INVENTORY   = "leltár";
+const std::string CCreature::CMD_NORTH       = "é";
+const std::string CCreature::CMD_SOUTH       = "d";
+const std::string CCreature::CMD_EAST        = "k";
+const std::string CCreature::CMD_WEST        = "ny";
+const std::string CCreature::CMD_NORTHEAST   = "ék";
+const std::string CCreature::CMD_SOUTHEAST   = "dk";
+const std::string CCreature::CMD_NORTHWEST   = "ény";
+const std::string CCreature::CMD_SOUTHWEST   = "dny";
+const std::string CCreature::CMD_IN          = "be";
+const std::string CCreature::CMD_OUT         = "ki";
+const std::string CCreature::CMD_UP          = "fel";
+const std::string CCreature::CMD_DOWN        = "le";
+const std::string CCreature::CMD_PICKUP      = "felvesz";
+const std::string CCreature::CMD_DROP        = "eldob";
+const std::string CCreature::CMD_ALIAS       = "álnév";
+const std::string CCreature::CMD_BRINGOUT    = "elõvesz";
+const std::string CCreature::CMD_PUTAWAY     = "eltesz";
+const std::string CCreature::CMD_POINTS      = "pontok";
+const std::string CCreature::CMD_ABOUT       = "névjegy";
+const std::string CCreature::CMD_HELP        = "súgó";
+const std::string CCreature::CMD_HELP2       = "?";
 // parameters;
-const char* CCreature::CMD_SELF        = "magam";
-const char* CCreature::CMD_ALL         = "mindent";
-const char* CCreature::CMD_BRIEF       = "-rövid";
-const char* CCreature::CMD_VERBOSE     = "-teljes";
+const std::string CCreature::CMD_SELF        = "magam";
+const std::string CCreature::CMD_ALL         = "mindent";
+const std::string CCreature::CMD_BRIEF       = "-rövid";
+const std::string CCreature::CMD_VERBOSE     = "-teljes";
 #endif
 
-const char* CCreature::K_SEX            = "iSex";
-const char* CCreature::K_RANDOMMOVE     = "iRandomMove";
+const std::string CCreature::K_SEX           = "iSex";
+const std::string CCreature::K_RANDOMMOVE    = "iRandomMove";
+// CCreature keywords
+const std::string CCreature::K_WEAR          = "sWear";         // viselt dolgok
+const std::string CCreature::K_RACE          = "sRace";         // faj (inkabb maskepp kellene megoldani)
+const std::string CCreature::K_RANDOMSAY     = "sRandomSay";    // veletlenszeruen mondott szovegek
+// wearing types
+const std::string CCreature::K_LEFT_HAND     = "left hand";     // bal kez
+const std::string CCreature::K_RIGHT_HAND    = "right hand";    // jobb kez
+const std::string CCreature::K_TWO_HANDS     = "two hands";     // mindket kez
 
 void CCreature::init ()
 {
@@ -419,7 +427,7 @@ void CCreature::random_move ()
             Log.debug (os.str ());
             return;
         }
-        CStringVector sv = split (K_LISTSEPARATOR, parent->get_sparam (K_EXITS));
+        CStringVector sv = split (K_LISTSEPARATOR, parent->get_sparam (CMap::K_EXITS));
         if (!sv.empty ())
         {
             int rn = int ((float) sv.size () * rand () / (RAND_MAX + 1.0));
@@ -813,7 +821,7 @@ void CCreature::cmd_look (const std::string& cmd, const std::string& params)
             return;
         }
         // print possible exits of the area
-        CStringVector sv = split (K_LISTSEPARATOR, parent->get_sparam (K_EXITS));
+        CStringVector sv = split (K_LISTSEPARATOR, parent->get_sparam (CMap::K_EXITS));
         if (!sv.empty ())
         {
             //(*ostream) << std::endl;
@@ -949,33 +957,33 @@ void CCreature::cmd_look (const std::string& cmd, const std::string& params)
                 types_map[K_LEFT_HAND]  = "wields %s in the left hand.";
                 types_map[K_RIGHT_HAND] = "wields %s in the right hand.";
                 types_map[K_TWO_HANDS]  = "wields %s in the hands.";
-                types_map[K_RING]       = "has %s on a finger.";
-                types_map[K_BRACELET]   = "has %s on a wrist.";
-                types_map[K_AMULET]     = "wears %s on the neck.";
-                types_map[K_CLOAK]      = "wears %s.";
-                types_map[K_PANTS]      = "wears %s.";
-                types_map[K_FOOTWEAR]   = "wears %s on the feet.";
-                types_map[K_GLOVE]      = "wears %s on the hands.";
-                types_map[K_CAP]        = "wears %s on the head.";
-                types_map[K_TORSO]      = "wears %s on the torso.";
-                types_map[K_ARMGUARDS]  = "wears %s on the arm.";
-                types_map[K_SHINGUARDS] = "wears %s on the shin.";
+                types_map[CItem::K_RING]       = "has %s on a finger.";
+                types_map[CItem::K_BRACELET]   = "has %s on a wrist.";
+                types_map[CItem::K_AMULET]     = "wears %s on the neck.";
+                types_map[CItem::K_CLOAK]      = "wears %s.";
+                types_map[CItem::K_PANTS]      = "wears %s.";
+                types_map[CItem::K_FOOTWEAR]   = "wears %s on the feet.";
+                types_map[CItem::K_GLOVE]      = "wears %s on the hands.";
+                types_map[CItem::K_CAP]        = "wears %s on the head.";
+                types_map[CItem::K_TORSO]      = "wears %s on the torso.";
+                types_map[CItem::K_ARMGUARDS]  = "wears %s on the arm.";
+                types_map[CItem::K_SHINGUARDS] = "wears %s on the shin.";
 #endif
 #if (LANG == HUN)
                 types_map[K_LEFT_HAND]  = "Egy %s fog a bal kezében.";
                 types_map[K_RIGHT_HAND] = "Egy %s fog a jobb kezében.";
                 types_map[K_TWO_HANDS]  = "Egy %s fog a két kezében.";
-                types_map[K_RING]       = "Egy %s visel az egyik ujján.";
-                types_map[K_BRACELET]   = "Egy %s visel a csuklóján.";
-                types_map[K_AMULET]     = "Egy %s visel a nyaka körül.";
-                types_map[K_CLOAK]      = "Egy %s visel.";
-                types_map[K_PANTS]      = "Egy %s visel.";
-                types_map[K_FOOTWEAR]   = "Egy %s visel a lábán.";
-                types_map[K_GLOVE]      = "Egy %s visel a kezén.";
-                types_map[K_CAP]        = "Egy %s visel a fején.";
-                types_map[K_TORSO]      = "Egy %s visel a törzsén.";
-                types_map[K_ARMGUARDS]  = "Egy %s visel az alkarján";
-                types_map[K_SHINGUARDS] = "Egy %s visel a lábszárán.";
+                types_map[CItem::K_RING]       = "Egy %s visel az egyik ujján.";
+                types_map[CItem::K_BRACELET]   = "Egy %s visel a csuklóján.";
+                types_map[CItem::K_AMULET]     = "Egy %s visel a nyaka körül.";
+                types_map[CItem::K_CLOAK]      = "Egy %s visel.";
+                types_map[CItem::K_PANTS]      = "Egy %s visel.";
+                types_map[CItem::K_FOOTWEAR]   = "Egy %s visel a lábán.";
+                types_map[CItem::K_GLOVE]      = "Egy %s visel a kezén.";
+                types_map[CItem::K_CAP]        = "Egy %s visel a fején.";
+                types_map[CItem::K_TORSO]      = "Egy %s visel a törzsén.";
+                types_map[CItem::K_ARMGUARDS]  = "Egy %s visel az alkarján";
+                types_map[CItem::K_SHINGUARDS] = "Egy %s visel a lábszárán.";
 #endif
                 if (!creature->childs.empty ())
                 {
@@ -1053,33 +1061,33 @@ void CCreature::cmd_inventory (const std::string& cmd, const std::string& params
     types_map[K_LEFT_HAND]  = "You wield %s in left hand.";
     types_map[K_RIGHT_HAND] = "You wield %s in right hand.";
     types_map[K_TWO_HANDS]  = "You wield %s in hands.";
-    types_map[K_RING]       = "You have %s on either finger.";
-    types_map[K_BRACELET]   = "You have %s on either wrist.";
-    types_map[K_AMULET]     = "You wear %s on neck.";
-    types_map[K_CLOAK]      = "You wear %s.";
-    types_map[K_PANTS]      = "You wear %s.";
-    types_map[K_FOOTWEAR]   = "You wear %s on feet.";
-    types_map[K_GLOVE]      = "You wear %s on hands.";
-    types_map[K_CAP]        = "You wear %s on head.";
-    types_map[K_TORSO]      = "You wear %s on torso.";
-    types_map[K_ARMGUARDS]  = "You wear %s on arm.";
-    types_map[K_SHINGUARDS] = "You wear %s on shin.";
+    types_map[CItem::K_RING]       = "You have %s on either finger.";
+    types_map[CItem::K_BRACELET]   = "You have %s on either wrist.";
+    types_map[CItem::K_AMULET]     = "You wear %s on neck.";
+    types_map[CItem::K_CLOAK]      = "You wear %s.";
+    types_map[CItem::K_PANTS]      = "You wear %s.";
+    types_map[CItem::K_FOOTWEAR]   = "You wear %s on feet.";
+    types_map[CItem::K_GLOVE]      = "You wear %s on hands.";
+    types_map[CItem::K_CAP]        = "You wear %s on head.";
+    types_map[CItem::K_TORSO]      = "You wear %s on torso.";
+    types_map[CItem::K_ARMGUARDS]  = "You wear %s on arm.";
+    types_map[CItem::K_SHINGUARDS] = "You wear %s on shin.";
 #endif
 #if (LANG == HUN)
     types_map[K_LEFT_HAND]  = "Egy %s fogsz a bal kezedben.";
     types_map[K_RIGHT_HAND] = "Egy %s fogsz a jobb kezedben.";
     types_map[K_TWO_HANDS]  = "Egy %s fogsz a két kezedben.";
-    types_map[K_RING]       = "Egy %s viselsz az egyik ujjadon.";
-    types_map[K_BRACELET]   = "Egy %s viselsz a csuklódon.";
-    types_map[K_AMULET]     = "Egy %s viselsz a nyakad körül.";
-    types_map[K_CLOAK]      = "Egy %s viselsz.";
-    types_map[K_PANTS]      = "Egy %s viselsz.";
-    types_map[K_FOOTWEAR]   = "Egy %s viselsz a lábadon.";
-    types_map[K_GLOVE]      = "Egy %s viselsz a kezeden.";
-    types_map[K_CAP]        = "Egy %s viselsz a fejeden.";
-    types_map[K_TORSO]      = "Egy %s viselsz a törzseden.";
-    types_map[K_ARMGUARDS]  = "Egy %s viselsz az alkarodon";
-    types_map[K_SHINGUARDS] = "Egy %s viselsz a sípcsontodon.";
+    types_map[CItem::K_RING]       = "Egy %s viselsz az egyik ujjadon.";
+    types_map[CItem::K_BRACELET]   = "Egy %s viselsz a csuklódon.";
+    types_map[CItem::K_AMULET]     = "Egy %s viselsz a nyakad körül.";
+    types_map[CItem::K_CLOAK]      = "Egy %s viselsz.";
+    types_map[CItem::K_PANTS]      = "Egy %s viselsz.";
+    types_map[CItem::K_FOOTWEAR]   = "Egy %s viselsz a lábadon.";
+    types_map[CItem::K_GLOVE]      = "Egy %s viselsz a kezeden.";
+    types_map[CItem::K_CAP]        = "Egy %s viselsz a fejeden.";
+    types_map[CItem::K_TORSO]      = "Egy %s viselsz a törzseden.";
+    types_map[CItem::K_ARMGUARDS]  = "Egy %s viselsz az alkarodon";
+    types_map[CItem::K_SHINGUARDS] = "Egy %s viselsz a sípcsontodon.";
 #endif
     CRegEx regex ("(\\S+)\\s+(\\S+)");
     if (cmd == CMD_HELP && regex.Matches (params))
@@ -1350,7 +1358,7 @@ void CCreature::cmd_move (const std::string& cmd, const std::string& params)
         return;
     }
     CSplit split;
-    CStringVector sv = split (K_LISTSEPARATOR, map->get_sparam (K_EXITS));
+    CStringVector sv = split (K_LISTSEPARATOR, map->get_sparam (CMap::K_EXITS));
     if (!sv.empty ())
     {
         bool ok = false;
@@ -1918,64 +1926,64 @@ void CCreature::cmd_bringout (const std::string& cmd, const std::string& params)
     CRegEx regex ("(\\S+)\\s+(\\S+)");
     CStringMap types_map, types_map2;
 #if (LANG == ENG)
-    types_map[K_ONE_HANDED]     = "You have no more free hand.";
-    types_map[K_TWO_HANDED]     = "You have already %s in hands.";
-    types_map[K_RING]           = "You have already %s on finger.";
-    types_map[K_BRACELET]       = "You wear already %s on wrist.";
-    types_map[K_AMULET]         = "You wear already %s on neck.";
-    types_map[K_CLOAK]          = "You wear already %s.";
-    types_map[K_PANTS]          = "You wear already %s.";
-    types_map[K_FOOTWEAR]       = "You wear already %s on feet.";
-    types_map[K_GLOVE]          = "You wear already %s on hands.";
-    types_map[K_CAP]            = "You wear already %s on head.";
-    types_map[K_TORSO]          = "You wear already %s.";
-    types_map[K_ARMGUARDS]      = "You wear already %s on arms.";
-    types_map[K_SHINGUARDS]     = "You wear already %s on shins.";
+    types_map[CItem::K_ONE_HANDED]     = "You have no more free hand.";
+    types_map[CItem::K_TWO_HANDED]     = "You have already %s in hands.";
+    types_map[CItem::K_RING]           = "You have already %s on finger.";
+    types_map[CItem::K_BRACELET]       = "You wear already %s on wrist.";
+    types_map[CItem::K_AMULET]         = "You wear already %s on neck.";
+    types_map[CItem::K_CLOAK]          = "You wear already %s.";
+    types_map[CItem::K_PANTS]          = "You wear already %s.";
+    types_map[CItem::K_FOOTWEAR]       = "You wear already %s on feet.";
+    types_map[CItem::K_GLOVE]          = "You wear already %s on hands.";
+    types_map[CItem::K_CAP]            = "You wear already %s on head.";
+    types_map[CItem::K_TORSO]          = "You wear already %s.";
+    types_map[CItem::K_ARMGUARDS]      = "You wear already %s on arms.";
+    types_map[CItem::K_SHINGUARDS]     = "You wear already %s on shins.";
     
     types_map2[K_LEFT_HAND]     = "You bring out %s and wield in left hand.";
     types_map2[K_RIGHT_HAND]    = "You bring out %s and wield in rightt hand.";
     types_map2[K_TWO_HANDS]     = "You bring out %s and wield in both hands.";
-    types_map2[K_RING]          = "You bring out %s and put on one of fingers.";
-    types_map2[K_BRACELET]      = "You bring out %s and put on one of wrist.";
-    types_map2[K_AMULET]        = "You bring out %s and put on neck.";
-    types_map2[K_CLOAK]         = "You bring out %s and wear.";
-    types_map2[K_PANTS]         = "You bring out %s and wear.";
-    types_map2[K_FOOTWEAR]      = "You bring out %s and wear on feet.";
-    types_map2[K_GLOVE]         = "You bring out %s and wear on hands.";
-    types_map2[K_CAP]           = "You bring out %s and wear on head.";
-    types_map2[K_TORSO]         = "You bring out %s and wear.";
-    types_map2[K_ARMGUARDS]     = "You bring out %s and wear on arms.";
-    types_map2[K_SHINGUARDS]    = "You bring out %s and wear on shins.";
+    types_map2[CItem::K_RING]          = "You bring out %s and put on one of fingers.";
+    types_map2[CItem::K_BRACELET]      = "You bring out %s and put on one of wrist.";
+    types_map2[CItem::K_AMULET]        = "You bring out %s and put on neck.";
+    types_map2[CItem::K_CLOAK]         = "You bring out %s and wear.";
+    types_map2[CItem::K_PANTS]         = "You bring out %s and wear.";
+    types_map2[CItem::K_FOOTWEAR]      = "You bring out %s and wear on feet.";
+    types_map2[CItem::K_GLOVE]         = "You bring out %s and wear on hands.";
+    types_map2[CItem::K_CAP]           = "You bring out %s and wear on head.";
+    types_map2[CItem::K_TORSO]         = "You bring out %s and wear.";
+    types_map2[CItem::K_ARMGUARDS]     = "You bring out %s and wear on arms.";
+    types_map2[CItem::K_SHINGUARDS]    = "You bring out %s and wear on shins.";
 #endif
 #if (LANG == HUN)
-    types_map[K_ONE_HANDED]     = "Már nincs szabad kezed.";
-    types_map[K_TWO_HANDED]     = "Már van egy %s a kezedben.";
-    types_map[K_RING]           = "Már van egy %s az egyik ujjadon.";
-    types_map[K_BRACELET]       = "Már van egy %s a csuklódon.";
-    types_map[K_AMULET]         = "Már van egy %s a nyakad körül.";
-    types_map[K_CLOAK]          = "Már van egy %s rajtad.";
-    types_map[K_PANTS]          = "Már van egy %s rajtad.";
-    types_map[K_FOOTWEAR]       = "Már van egy %s a lábadon.";
-    types_map[K_GLOVE]          = "Már van egy %s a kezeden.";
-    types_map[K_CAP]            = "Már van egy %s a fejeden.";
-    types_map[K_TORSO]          = "Már van egy %s a törzseden.";
-    types_map[K_ARMGUARDS]      = "Már van egy %s az alkarodon.";
-    types_map[K_SHINGUARDS]     = "Már van egy %s a sípcsontodon.";
+    types_map[CItem::K_ONE_HANDED]     = "Már nincs szabad kezed.";
+    types_map[CItem::K_TWO_HANDED]     = "Már van egy %s a kezedben.";
+    types_map[CItem::K_RING]           = "Már van egy %s az egyik ujjadon.";
+    types_map[CItem::K_BRACELET]       = "Már van egy %s a csuklódon.";
+    types_map[CItem::K_AMULET]         = "Már van egy %s a nyakad körül.";
+    types_map[CItem::K_CLOAK]          = "Már van egy %s rajtad.";
+    types_map[CItem::K_PANTS]          = "Már van egy %s rajtad.";
+    types_map[CItem::K_FOOTWEAR]       = "Már van egy %s a lábadon.";
+    types_map[CItem::K_GLOVE]          = "Már van egy %s a kezeden.";
+    types_map[CItem::K_CAP]            = "Már van egy %s a fejeden.";
+    types_map[CItem::K_TORSO]          = "Már van egy %s a törzseden.";
+    types_map[CItem::K_ARMGUARDS]      = "Már van egy %s az alkarodon.";
+    types_map[CItem::K_SHINGUARDS]     = "Már van egy %s a sípcsontodon.";
 
     types_map2[K_LEFT_HAND]     = "Elõveszed %s és a bal kezedben megfogod.";
     types_map2[K_RIGHT_HAND]    = "Elõveszed %s és a jobb kezedben megfogod.";
     types_map2[K_TWO_HANDS]     = "Elõveszed %s és a kezedben megfogod.";
-    types_map2[K_RING]          = "Elõveszed %s és az egyik ujjadra húzod.";
-    types_map2[K_BRACELET]      = "Elõveszed %s és a csuklódra teszed.";
-    types_map2[K_AMULET]        = "Elõveszed %s és felteszed a nyakadra.";
-    types_map2[K_CLOAK]         = "Elõveszed %s és magadra teríted.";
-    types_map2[K_PANTS]         = "Elõveszed %s és felveszed.";
-    types_map2[K_FOOTWEAR]      = "Elõveszed %s és a lábadra húzod.";
-    types_map2[K_GLOVE]         = "Elõveszed %s és a kezedre húzod.";
-    types_map2[K_CAP]           = "Elõveszed %s és a fejedre teszed.";
-    types_map2[K_TORSO]         = "Elõveszed %s és felveszed.";
-    types_map2[K_ARMGUARDS]     = "Elõveszed %s és az alkarodra húzod";
-    types_map2[K_SHINGUARDS]    = "Elõveszed %s és a lábszáradra húzod.";
+    types_map2[CItem::K_RING]          = "Elõveszed %s és az egyik ujjadra húzod.";
+    types_map2[CItem::K_BRACELET]      = "Elõveszed %s és a csuklódra teszed.";
+    types_map2[CItem::K_AMULET]        = "Elõveszed %s és felteszed a nyakadra.";
+    types_map2[CItem::K_CLOAK]         = "Elõveszed %s és magadra teríted.";
+    types_map2[CItem::K_PANTS]         = "Elõveszed %s és felveszed.";
+    types_map2[CItem::K_FOOTWEAR]      = "Elõveszed %s és a lábadra húzod.";
+    types_map2[CItem::K_GLOVE]         = "Elõveszed %s és a kezedre húzod.";
+    types_map2[CItem::K_CAP]           = "Elõveszed %s és a fejedre teszed.";
+    types_map2[CItem::K_TORSO]         = "Elõveszed %s és felveszed.";
+    types_map2[CItem::K_ARMGUARDS]     = "Elõveszed %s és az alkarodra húzod";
+    types_map2[CItem::K_SHINGUARDS]    = "Elõveszed %s és a lábszáradra húzod.";
 #endif
     if (cmd == CMD_HELP && regex.Matches (params))
     {
@@ -2032,28 +2040,28 @@ void CCreature::cmd_bringout (const std::string& cmd, const std::string& params)
 #if (LANG == HUN)
                 name_found = th->get_name (M_ARTICLE | M_RAG_T);
 #endif
-                std::string type = th->get_sparam (K_TYPE);
+                std::string type = th->get_sparam (CItem::K_TYPE);
                 if (!type.empty () && 
-                        (type == K_RING || type == K_BRACELET || type == K_AMULET ||
-                        type == K_CLOAK || type == K_PANTS || type == K_FOOTWEAR ||
-                        type == K_GLOVE || type == K_CAP || type == K_TORSO ||
-                        type == K_ARMGUARDS || type == K_SHINGUARDS || 
-                        type == K_ONE_HANDED || type == K_TWO_HANDED))
+                        (type == CItem::K_RING || type == CItem::K_BRACELET || type == CItem::K_AMULET ||
+                        type == CItem::K_CLOAK || type == CItem::K_PANTS || type == CItem::K_FOOTWEAR ||
+                        type == CItem::K_GLOVE || type == CItem::K_CAP || type == CItem::K_TORSO ||
+                        type == CItem::K_ARMGUARDS || type == CItem::K_SHINGUARDS || 
+                        type == CItem::K_ONE_HANDED || type == CItem::K_TWO_HANDED))
                 {
                     ok = true;
                     for (CThingListIt j = childs.begin (); j != childs.end (); j++)
                     {
                         CThing *th2 = *j;
                         std::string wearedon = th2->get_sparam (CItem::K_WEAREDON);
-                        if (wearedon == K_RING) ring++;
-                        if (wearedon == K_BRACELET) bracelet++;
+                        if (wearedon == CItem::K_RING) ring++;
+                        if (wearedon == CItem::K_BRACELET) bracelet++;
                         if (wearedon == K_LEFT_HAND) left_hand = true;
                         if (wearedon == K_RIGHT_HAND) right_hand = true;
-                        if (wearedon == type && ((type == K_RING && ring > 1) ||
-                                    ((type == K_BRACELET && bracelet > 1))) ||
-                                (type == K_ONE_HANDED && left_hand && right_hand) ||
-                                (type == K_TWO_HANDED && (left_hand || right_hand)) ||
-                                (type == K_TWO_HANDED && wearedon == K_TWO_HANDS))
+                        if (wearedon == type && ((type == CItem::K_RING && ring > 1) ||
+                                    ((type == CItem::K_BRACELET && bracelet > 1))) ||
+                                (type == CItem::K_ONE_HANDED && left_hand && right_hand) ||
+                                (type == CItem::K_TWO_HANDED && (left_hand || right_hand)) ||
+                                (type == CItem::K_TWO_HANDED && wearedon == K_TWO_HANDS))
                         {
                             // Mar visel egy targyat
                             // You have already wear an item
@@ -2061,7 +2069,7 @@ void CCreature::cmd_bringout (const std::string& cmd, const std::string& params)
                             snprintf (s, sizeof (s), types_map[type].c_str (), th2->get_name ().c_str ());
                             (*ostream) << s << std::endl;
                             ok = false;
-                            if (type != K_BRACELET && type != K_RING)
+                            if (type != CItem::K_BRACELET && type != CItem::K_RING)
                             {
                                 break;
                             }
@@ -2069,7 +2077,7 @@ void CCreature::cmd_bringout (const std::string& cmd, const std::string& params)
                     }
                     if (ok)
                     {
-                        if (type == K_ONE_HANDED)
+                        if (type == CItem::K_ONE_HANDED)
                         {
                             if (!right_hand)
                             {
@@ -2086,7 +2094,7 @@ void CCreature::cmd_bringout (const std::string& cmd, const std::string& params)
                                 Log.debug (os.str ());
                             }
                         }
-                        else if (type == K_TWO_HANDED)
+                        else if (type == CItem::K_TWO_HANDED)
                         {
                             th->set_sparam (CItem::K_WEAREDON, K_TWO_HANDS);
                         }
@@ -2184,13 +2192,13 @@ void CCreature::cmd_putaway (const std::string& cmd, const std::string& params)
             if (th->compare_name (name))
             {
                 found = true;
-                std::string type = th->get_sparam (K_TYPE);
+                std::string type = th->get_sparam (CItem::K_TYPE);
                 if (!type.empty () && !th->get_sparam (CItem::K_WEAREDON).empty () &&
-                        (type == K_RING || type == K_BRACELET || type == K_AMULET ||
-                        type == K_CLOAK || type == K_PANTS || type == K_FOOTWEAR ||
-                        type == K_GLOVE || type == K_CAP || type == K_TORSO ||
-                        type == K_ARMGUARDS || type == K_SHINGUARDS || 
-                        type == K_ONE_HANDED || type == K_TWO_HANDED))
+                        (type == CItem::K_RING || type == CItem::K_BRACELET || type == CItem::K_AMULET ||
+                        type == CItem::K_CLOAK || type == CItem::K_PANTS || type == CItem::K_FOOTWEAR ||
+                        type == CItem::K_GLOVE || type == CItem::K_CAP || type == CItem::K_TORSO ||
+                        type == CItem::K_ARMGUARDS || type == CItem::K_SHINGUARDS || 
+                        type == CItem::K_ONE_HANDED || type == CItem::K_TWO_HANDED))
                 {
                     th->set_sparam (CItem::K_WEAREDON, "");
                     std::ostringstream os;

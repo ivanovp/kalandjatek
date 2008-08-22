@@ -4,7 +4,7 @@
  * Author:      Peter Ivanov
  * Modified by:
  * Created:     2005/04/13
- * Last modify: 2008-08-22 09:46:17 ivanovp {Time-stamp}
+ * Last modify: 2008-08-22 11:38:49 ivanovp {Time-stamp}
  * Copyright:   (C) Peter Ivanov, 2005
  * Licence:     GPL
  */
@@ -28,11 +28,28 @@ private:
 
 public:
     // CItem keywords
-    static const char* K_PRICE;
-    static const char* K_WEIGHT;
-    static const char* K_MOVABLE;
-    static const char* K_VISIBLE;
-    static const char* K_WEAREDON;
+    static const std::string K_PRICE;
+    static const std::string K_WEIGHT;
+    static const std::string K_MOVABLE;
+    static const std::string K_VISIBLE;
+    static const std::string K_WEAREDON;
+    // CItem keywords
+    static const std::string K_TYPE;
+    static const std::string K_RING;
+    static const std::string K_BRACELET;
+    static const std::string K_AMULET;
+    static const std::string K_CLOAK;
+    static const std::string K_PANTS;
+    static const std::string K_FOOTWEAR;
+    static const std::string K_GLOVE;
+    static const std::string K_CAP;
+    static const std::string K_TORSO;
+    static const std::string K_ARMGUARDS;
+    static const std::string K_SHINGUARDS;
+    static const std::string K_ONE_HANDED;
+    static const std::string K_TWO_HANDED;
+    static const std::string K_CURRENCY;
+    static const std::string K_KEY;
 
     static CThingList global_itemlist;
 
