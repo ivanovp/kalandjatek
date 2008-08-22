@@ -4,7 +4,7 @@
  * Author:      Peter Ivanov
  * Modified by:
  * Created:     2005/01/13
- * Last modify: 2008-08-22 13:53:12 ivanovp {Time-stamp}
+ * Last modify: 2008-08-22 14:55:20 ivanovp {Time-stamp}
  * Copyright:   (C) Peter Ivanov, 2005
  * Licence:     GPL
  */
@@ -635,7 +635,7 @@ CThing* CThing::find (const std::string& id, CThingList& thinglist)
 std::string CThing::info (int verbose_level)
 {
     std::ostringstream os;
-    os << "### CThing info ###" << std::endl;
+    os << "---[ CThing info ]------------------------------------------------------------" << std::endl;
     os << "type: " << get_type () << std::endl;
     os << "sn: " << get_sn () << std::endl;
     os << "id: [" << get_id () << "]" << std::endl;
@@ -649,7 +649,7 @@ std::string CThing::info (int verbose_level)
         os << "parent: NONE" << std::endl;
     os << "childs: " << childs.size () << " thing(s)" << std::endl;
     if (verbose_level <= 2) return os.str ();
-    if (verbose_level >= 4)
+    if (verbose_level >= 3)
     {
         for (CThingListIt i = childs.begin (); i != childs.end (); i++)
         {
@@ -657,7 +657,7 @@ std::string CThing::info (int verbose_level)
         }
     }
     os << "sparams: " << sparams.size () << " variable(s)" << std::endl;
-    if (verbose_level >= 3)
+    if (verbose_level >= 4)
     {
         for (CThingSParamIt i = sparams.begin (); i != sparams.end (); i++)
         {
@@ -665,7 +665,7 @@ std::string CThing::info (int verbose_level)
         }
     }
     os << "iparams: " << iparams.size () << " variable(s)" << std::endl;
-    if (verbose_level >= 3)
+    if (verbose_level >= 4)
     {
         for (CThingIParamIt i = iparams.begin (); i != iparams.end (); i++)
         {
@@ -673,7 +673,7 @@ std::string CThing::info (int verbose_level)
         }
     }
     os << "fparams: " << fparams.size () << " variable(s)" << std::endl;
-    if (verbose_level >= 3)
+    if (verbose_level >= 4)
     {
         for (CThingFParamIt i = fparams.begin (); i != fparams.end (); i++)
         {
