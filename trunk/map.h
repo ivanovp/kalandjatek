@@ -4,7 +4,7 @@
  * Author:      Peter Ivanov
  * Modified by:
  * Created:     2005/04/13
- * Last modify: 2008-08-22 13:51:58 ivanovp {Time-stamp}
+ * Last modify: 2008-08-23 08:35:24 ivanovp {Time-stamp}
  * Copyright:   (C) Peter Ivanov, 2005
  * Licence:     GPL
  */
@@ -27,6 +27,7 @@ private:
     void init ();
 
 public:
+    static const std::string MAP; // for get_type()
     static const std::string K_EXITS;
     static CThingList global_maplist;
 

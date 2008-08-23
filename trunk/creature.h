@@ -4,7 +4,7 @@
  * Author:      Peter Ivanov
  * Modified by:
  * Created:     2005/04/13
- * Last modify: 2008-08-22 14:31:11 ivanovp {Time-stamp}
+ * Last modify: 2008-08-23 14:36:05 ivanovp {Time-stamp}
  * Copyright:   (C) Peter Ivanov, 2005
  * Licence:     GPL
  */
@@ -83,6 +83,7 @@ private:
     void init ();
 
 public:
+    static const std::string CREATURE; // for get_type()
     // commands
     static const std::string CMD_SAY;
     static const std::string CMD_LOOK;
@@ -105,6 +106,7 @@ public:
     static const std::string CMD_BRINGOUT;
     static const std::string CMD_PUTAWAY;
     static const std::string CMD_POINTS;
+    static const std::string CMD_ATTACK;
     static const std::string CMD_ABOUT;
     static const std::string CMD_HELP;
     static const std::string CMD_HELP2;
@@ -125,6 +127,9 @@ public:
     static const std::string K_LEFT_HAND;
     static const std::string K_RIGHT_HAND;
     static const std::string K_TWO_HANDS;
+
+    static const std::string K_ATTACKED;
+    static const std::string K_DEAD;
 
     static CThingList global_creaturelist;
 
@@ -159,7 +164,7 @@ public:
 
     /**
      * Get spectator mode.
-     * \return True if spectator mode enabled.
+     * \return true if spectator mode enabled.
      */
     bool get_spectator ();
 
@@ -188,6 +193,11 @@ public:
     virtual int get_color ();
 
     /**
+     * If the creature is attacking somebody it will be handled here. Periodic event. Called from do_something.
+     */
+    virtual void combat ();
+
+    /**
      * Non-player creature look somewho/something/around. Random event. Called from do_something.
      */
     virtual void random_look ();
@@ -213,6 +223,14 @@ public:
      * \param from_serial_number Origin of command. -1 or own serial number means: command gived by the player.
      */
     virtual bool parser (const std::string& text, signed long from_serial_number = -1);
+
+    /**
+     * Put text to spectators stream.
+     * \param text Text to send.
+     * \param except_thing Don't send text to the creature.
+     * \param only_this_place If creature is in this place (pointer of parents equal) then send text.
+     */
+    void write_to_spectators (const std::string& text, CThing& except_thing, bool only_this_place = true);
 
     /**
      * Put text to spectators stream.
@@ -273,6 +291,11 @@ public:
     void cmd_points (const std::string& cmd, const std::string& params);
 
     /**
+     * Attack a creature.
+     */
+    void cmd_attack (const std::string& cmd, const std::string& params);
+
+    /**
      * Show informations about author and program.
      */
     void cmd_about (const std::string& cmd, const std::string& params);
@@ -303,28 +326,59 @@ public:
     float get_loadability ();
 
     /**
+     * Calculate damage of creature.
+     */
+    std::string get_damage ();
+
+    /**
+     * Calculate damage resistance of creature.
+     */
+    std::string get_damage_resistance ();
+
+    /**
      * Calculate specified statistic of creature.
      */
-    virtual int get_stat (int stat_type);
+    virtual int get_stat (int stat_type, bool base = true);
 
     /**
      * Returns true if the creature is male.
      *
-     * @return True: if it is a male.
+     * @return true: if it is a male.
      */
     bool isMale () { return get_iparam (K_SEX) == 0; };
     
     /**
      * Returns true if the creature is female.
      *
-     * @return True: if it is a female.
+     * @return true: if it is a female.
      */
     bool isFemale () { return get_iparam (K_SEX) == 1; };
 
     /**
+     * Returns true if the creature is dead.
+     *
+     * @return true: if it is dead.
+     */
+    bool isDead () { return get_iparam (K_DEAD) == 1; };
+
+    /**
+     * Returns true if the creature is alive.
+     *
+     * @return true: if it is alive.
+     */
+    bool isAlive () { return get_iparam (K_DEAD) == 0; };
+
+    /**
+     * Returns true if the creature is in combat.
+     *
+     * @return true: if it is alive.
+     */
+    bool isInCombat () { return get_iparam (K_ATTACKED) != 0; };
+
+    /**
      * Returns true if the creature allowed to move around.
      *
-     * @return True: if it can move.
+     * @return true: if it can move.
      */
     bool doesRandomMove () { return get_iparam (K_RANDOMMOVE) == 1; };
 

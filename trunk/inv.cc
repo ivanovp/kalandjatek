@@ -4,7 +4,7 @@
  * Author:      Peter Ivanov
  * Modified by:
  * Created:     2005/04/26
- * Last modify: 2008-08-21 10:41:42 ivanovp {Time-stamp}
+ * Last modify: 2008-08-23 10:14:49 ivanovp {Time-stamp}
  * Copyright:   (C) Peter Ivanov, 2005
  * Licence:     GPL
  */
@@ -72,9 +72,13 @@ std::string CInventory::write ()
         {
 #if (LANG == ENG)
             if (!plural.empty ())
+            {
                 name = plural;
+            }
             else
+            {
                 name += "s";
+            }
 #endif
             (*os) << counter << " " << name;
         }
@@ -97,7 +101,9 @@ std::string CInventory::write ()
     {
         std::ostringstream *os2 = dynamic_cast<std::ostringstream*> (os);
         if (os2)
+        {
             s = os2->str ();
+        }
         delete os;
     }
     return s;

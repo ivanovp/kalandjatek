@@ -4,7 +4,7 @@
  * Author:      Peter Ivanov
  * Modified by:
  * Created:     2005/04/13
- * Last modify: 2008-08-22 13:44:35 ivanovp {Time-stamp}
+ * Last modify: 2008-08-23 08:35:31 ivanovp {Time-stamp}
  * Copyright:   (C) Peter Ivanov, 2005
  * Licence:     GPL
  */
@@ -27,6 +27,7 @@ private:
     void init ();
 
 public:
+    static const std::string ITEM; // for get_type()
     // CItem keywords
     static const std::string K_PRICE;
     static const std::string K_WEIGHT;

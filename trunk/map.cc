@@ -4,7 +4,7 @@
  * Author:      Peter Ivanov
  * Modified by:
  * Created:     2005/04/13
- * Last modify: 2008-08-22 13:50:41 ivanovp {Time-stamp}
+ * Last modify: 2008-08-23 08:36:01 ivanovp {Time-stamp}
  * Copyright:   (C) Peter Ivanov, 2005
  * Licence:     GPL
  */
@@ -13,12 +13,13 @@
 #include "map.h"
 #include "debug.h"
 
+const std::string CMap::MAP = "map"; // for get_type()
 const std::string CMap::K_EXITS = "sExits";        // kijáratok
 CThingList CMap::global_maplist;
 
 void CMap::init ()
 {
-    type = "map";
+    type = MAP;
     global_maplist.push_back (this);
 }
 

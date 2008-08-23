@@ -4,7 +4,7 @@
  * Author:      Peter Ivanov
  * Modified by:
  * Created:     2005/01/13
- * Last modify: 2008-08-22 17:22:37 ivanovp {Time-stamp}
+ * Last modify: 2008-08-23 13:52:35 ivanovp {Time-stamp}
  * Copyright:   (C) Peter Ivanov, 2005
  * Licence:     GPL
  */
@@ -19,6 +19,7 @@
 #include "split.h"
 #include "trans.h"
 
+const std::string CThing::THING          = "thing"; // for get_type()
 const std::string CThing::K_NAME         = "sName";
 const std::string CThing::K_NOUN         = "iNoun";         // koznev/tulajdonnev
 const std::string CThing::K_DESCR        = "sDescr";
@@ -44,6 +45,8 @@ const std::string CThing::K_HP           = "iHP";
 const std::string CThing::K_MP           = "iMP";
 const std::string CThing::K_ATTACK       = "iAttack";
 const std::string CThing::K_DEFENSE      = "iDefense";
+const std::string CThing::K_DAMAGE       = "sDamage";
+const std::string CThing::K_DAMAGE_RESISTANCE = "sDamageResistance";
 
 signed long CThing::last_sn = 0; ///< Last used serial number.
 
@@ -55,7 +58,7 @@ CStringVector CThing::stat_keyword_vector (S_STAT_NUMBER);
 
 void CThing::init ()
 {
-    type = "thing";
+    type = THING;
     sn = last_sn++;
     /*std::ostringstream os;
     os << __INFO__ << __FUNCTION__ << " sn: " << get_sn ();
@@ -79,6 +82,8 @@ void CThing::init ()
         stat_name_vector[S_MAX_MP]              = "max. mana points";
         stat_name_vector[S_ATTACK]              = "attack";
         stat_name_vector[S_DEFENSE]             = "defense";
+        stat_name_vector[S_DAMAGE]              = "damage";
+        stat_name_vector[S_DAMAGE_RESISTANCE]   = "damage resistance";
 #endif
 #if (LANG == HUN)
         stat_name_vector[S_BODY]                = "test";
@@ -96,6 +101,8 @@ void CThing::init ()
         stat_name_vector[S_MAX_MP]              = "maximális mana pont";
         stat_name_vector[S_ATTACK]              = "támadás";
         stat_name_vector[S_DEFENSE]             = "védekezés";
+        stat_name_vector[S_DAMAGE]              = "sebzés";
+        stat_name_vector[S_DAMAGE_RESISTANCE]   = "sebzés ellenállás";
 #endif
         stat_keyword_vector[S_BODY]             = K_BODY;
         stat_keyword_vector[S_STRENGTH]         = K_STRENGTH;
@@ -112,6 +119,8 @@ void CThing::init ()
         stat_keyword_vector[S_MAX_MP]           = -1;
         stat_keyword_vector[S_ATTACK]           = K_ATTACK;
         stat_keyword_vector[S_DEFENSE]          = K_DEFENSE;
+        stat_keyword_vector[S_DAMAGE]           = K_DAMAGE;
+        stat_keyword_vector[S_DAMAGE_RESISTANCE]= -1;
     }
 }
 
@@ -558,7 +567,7 @@ float CThing::get_fparam (const std::string& variable)
     }
 }
 
-int CThing::get_stat (int stat_type)
+int CThing::get_stat (int stat_type, bool base)
 {
     if (stat_keyword_vector.size () <= static_cast<unsigned int> (stat_type))
     {
@@ -616,7 +625,7 @@ void CThing::childs_do_something ()
     }
 }
 
-CThing* CThing::find (const std::string& id, CThingList& thinglist)
+CThing* CThing::find (const std::string& id, CThingList& thinglist, bool recursive)
 {
     for (CThingListIt i = thinglist.begin (); i != thinglist.end (); i++)
     {
@@ -624,11 +633,33 @@ CThing* CThing::find (const std::string& id, CThingList& thinglist)
         {
             return *i;
         }
-        if (!(*i)->childs.empty ()) 
+        if (recursive && !(*i)->childs.empty ()) 
         {
             CThing *thing = find (id, (*i)->childs);
             if (thing != NULL)
+            {
                 return thing;
+            }
+        }
+    }
+    return NULL;
+}
+
+CThing* CThing::find (const int sn, CThingList& thinglist, bool recursive)
+{
+    for (CThingListIt i = thinglist.begin (); i != thinglist.end (); i++)
+    {
+        if ((*i)->get_sn () == sn) 
+        {
+            return *i;
+        }
+        if (recursive && !(*i)->childs.empty ()) 
+        {
+            CThing *thing = find (sn, (*i)->childs);
+            if (thing != NULL)
+            {
+                return thing;
+            }
         }
     }
     return NULL;
