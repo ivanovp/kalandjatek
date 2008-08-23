@@ -4,7 +4,7 @@
  * Author:      Peter Ivanov
  * Modified by:
  * Created:     2005/04/13
- * Last modify: 2008-08-22 13:50:53 ivanovp {Time-stamp}
+ * Last modify: 2008-08-23 10:33:58 ivanovp {Time-stamp}
  * Copyright:   (C) Peter Ivanov, 2005
  * Licence:     GPL
  */
@@ -15,6 +15,7 @@
 #include "lang.h"
 #include "keyword.h"
 
+const std::string CItem::ITEM         = "item";
 const std::string CItem::K_PRICE      = "fPrice";       // ar
 const std::string CItem::K_WEIGHT     = "fWeight";      // tomeg
 const std::string CItem::K_MOVABLE    = "iMovable";     // mozgathato/felveheto targy (creature can move it)
@@ -44,7 +45,7 @@ CThingList CItem::global_itemlist;
 
 void CItem::init ()
 {
-    type = "item";
+    type = ITEM;
     global_itemlist.push_back (this);
 }
 
@@ -116,9 +117,7 @@ int CItem::get_color ()
 
 void CItem::do_something ()
 {
-    /*std::ostringstream os;
-    os << __INFO__ << "I can't do anything.";
-    Log.warn (os.str ());*/
+    // TODO eatable/drinkable items should rot
     childs_do_something ();
 }
 

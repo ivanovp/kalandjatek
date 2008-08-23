@@ -53,7 +53,7 @@ endif
 CXXFLAGS = $(CFLAGS)
 
 PROG = kj
-OBJS = $(PROG).o app.o thing.o item.o creature.o map.o cfg.o regex.o split.o trans.o lang.o inv.o
+OBJS = $(PROG).o app.o thing.o item.o creature.o map.o cfg.o regex.o split.o trans.o lang.o inv.o dice.o
 #ifeq ($(GTKMM), 1)
 #OBJS += textbuf.o
 #endif

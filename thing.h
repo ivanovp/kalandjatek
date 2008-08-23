@@ -4,7 +4,7 @@
  * Author:      Peter Ivanov
  * Modified by:
  * Created:     2005/01/13
- * Last modify: 2008-08-22 13:53:40 ivanovp {Time-stamp}
+ * Last modify: 2008-08-23 13:52:44 ivanovp {Time-stamp}
  * Copyright:   (C) Peter Ivanov, 2005
  * Licence:     GPL
  */
@@ -53,6 +53,7 @@ protected:
     std::string type;           ///< type of CThing: "thing"
 
 public:
+    static const std::string THING; // for get_type()
     static const std::string K_NAME;
     static const std::string K_NOUN;
     static const std::string K_DESCR;
@@ -78,6 +79,8 @@ public:
     static const std::string K_MP;
     static const std::string K_ATTACK;
     static const std::string K_DEFENSE;
+    static const std::string K_DAMAGE;
+    static const std::string K_DAMAGE_RESISTANCE;
 
     /// Last used serial number.
     static signed long last_sn;
@@ -108,19 +111,21 @@ public:
     /// Statistic types.
     typedef enum
     {
-        S_BODY = 0,         S_BDY = S_BODY,
-        S_STRENGTH = 1,     S_STR = S_STRENGTH,
-        S_DEXTERITY = 2,    S_DEX = S_DEXTERITY,
-        S_PERCEPTION = 3,   S_PER = S_PERCEPTION,
-        S_INTELLIGENCE = 4, S_INT = S_INTELLIGENCE,
-        S_WILLPOWER = 5,    S_WIL = S_WILLPOWER,
-        S_CHARISMA = 6,     S_CHA = S_CHARISMA,
-        S_CURR_HP = 7,      S_HP = S_CURR_HP,   // HP modifier of an item
+        S_BODY = 0,                 S_BDY = S_BODY,
+        S_STRENGTH = 1,             S_STR = S_STRENGTH,
+        S_DEXTERITY = 2,            S_DEX = S_DEXTERITY,
+        S_PERCEPTION = 3,           S_PER = S_PERCEPTION,
+        S_INTELLIGENCE = 4,         S_INT = S_INTELLIGENCE,
+        S_WILLPOWER = 5,            S_WIL = S_WILLPOWER,
+        S_CHARISMA = 6,             S_CHA = S_CHARISMA,
+        S_CURR_HP = 7,              S_HP = S_CURR_HP,   // HP modifier of an item
         S_MAX_HP = 8,       
-        S_CURR_MP = 9,      S_MP = S_CURR_MP,   // MP modifier of an item
+        S_CURR_MP = 9,              S_MP = S_CURR_MP,   // MP modifier of an item
         S_MAX_MP = 10,
         S_ATTACK = 11,
         S_DEFENSE = 12,
+        S_DAMAGE = 13,              S_DAM = 13,
+        S_DAMAGE_RESISTANCE = 14,   S_DR = 14,
         S_STAT_NUMBER // used to count number of statistics
     } stat_t;
         
@@ -252,7 +257,7 @@ public:
     /**
      * Get specified statistic of thing.
      */
-    virtual int get_stat (int stat_type);
+    virtual int get_stat (int stat_type, bool base = true);
     
     /**
      * Draw the shape of thing.
@@ -282,7 +287,15 @@ public:
      * \param thinglist Find in the thinglist.
      * \return Pointer to thing or NULL if not found.
      */
-    CThing* find (const std::string& id, CThingList& thinglist);
+    CThing* find (const std::string& id, CThingList& thinglist, bool recursive = true);
+    
+    /**
+     * Find thing in parent of thing childs.
+     * \param sn The serial number of thing
+     * \param thinglist Find in the thinglist.
+     * \return Pointer to thing or NULL if not found.
+     */
+    CThing* find (const int sn, CThingList& thinglist, bool recursive = true);
 
     /** 
      * Shows informations (only for debugging).

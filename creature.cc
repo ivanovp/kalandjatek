@@ -4,7 +4,7 @@
  * Author:      Peter Ivanov
  * Modified by:
  * Created:     2005/04/13
- * Last modify: 2008-08-22 20:57:25 ivanovp {Time-stamp}
+ * Last modify: 2008-08-23 14:34:43 ivanovp {Time-stamp}
  * Copyright:   (C) Peter Ivanov, 2005
  * Licence:     GPL
  */
@@ -26,9 +26,11 @@
 #include "inv.h"
 #include "colors.h"
 #include "app.h" // ABOUT
+#include "dice.h"
 
 /// Unit of weight
 #define U_WEIGHT        "kg"
+const std::string CCreature::CREATURE = "creature";
 
 CThingList CCreature::global_creaturelist;
 NullStream CCreature::nullstream;
@@ -55,6 +57,7 @@ const std::string CCreature::CMD_ALIAS       = "alias";
 const std::string CCreature::CMD_BRINGOUT    = "bringout";
 const std::string CCreature::CMD_PUTAWAY     = "putaway";
 const std::string CCreature::CMD_POINTS      = "points";
+const std::string CCreature::CMD_ATTACK      = "attack";
 const std::string CCreature::CMD_ABOUT       = "about";
 const std::string CCreature::CMD_HELP        = "help";
 const std::string CCreature::CMD_HELP2       = "?";
@@ -87,6 +90,7 @@ const std::string CCreature::CMD_ALIAS       = "álnév";
 const std::string CCreature::CMD_BRINGOUT    = "elõvesz";
 const std::string CCreature::CMD_PUTAWAY     = "eltesz";
 const std::string CCreature::CMD_POINTS      = "pontok";
+const std::string CCreature::CMD_ATTACK      = "támad";
 const std::string CCreature::CMD_ABOUT       = "névjegy";
 const std::string CCreature::CMD_HELP        = "súgó";
 const std::string CCreature::CMD_HELP2       = "?";
@@ -109,9 +113,12 @@ const std::string CCreature::K_LEFT_HAND     = "left hand";     // bal kez
 const std::string CCreature::K_RIGHT_HAND    = "right hand";    // jobb kez
 const std::string CCreature::K_TWO_HANDS     = "two hands";     // mindket kez
 
+const std::string CCreature::K_ATTACKED      = "iAttacked";     // kit tamad eppen
+const std::string CCreature::K_DEAD          = "iDead";
+
 void CCreature::init ()
 {
-    type = "creature";
+    type = CREATURE;
     global_creaturelist.push_back (this);
     spectator = false;
     // Default otream works only under *nix systems.
@@ -140,8 +147,9 @@ void CCreature::init ()
     parser_map[CMD_BRINGOUT] = new CCmdFunctor<CCreature> (this, &CCreature::cmd_bringout);
     parser_map[CMD_PUTAWAY] = new CCmdFunctor<CCreature> (this, &CCreature::cmd_putaway);
     parser_map[CMD_POINTS] = new CCmdFunctor<CCreature> (this, &CCreature::cmd_points);
-    parser_map[CMD_ABOUT] = new CCmdFunctor<CCreature> (this, &CCreature::cmd_about);
+    parser_map[CMD_ATTACK] = new CCmdFunctor<CCreature> (this, &CCreature::cmd_attack);
 
+    parser_map[CMD_ABOUT] = new CCmdFunctor<CCreature> (this, &CCreature::cmd_about);
     parser_map[CMD_HELP] = new CCmdFunctor<CCreature> (this, &CCreature::cmd_help);
     parser_map[CMD_HELP2] = new CCmdFunctor<CCreature> (this, &CCreature::cmd_help);
     parser_map[CMD_INFO] = new CCmdFunctor<CCreature> (this, &CCreature::cmd_info);
@@ -346,11 +354,96 @@ int CCreature::get_color ()
     return 0;
 }
 
+void CCreature::combat ()
+{
+    if (get_iparam (K_ATTACKED))
+    {
+        CThing *th = find (get_iparam (K_ATTACKED), global_creaturelist);
+        if (th)
+        {
+            CCreature *creature = dynamic_cast<CCreature*> (th);
+            if (!creature)
+            {
+                std::ostringstream os;
+                os << __INFO__ << "Internal error. Dynamic cast failed. The item is not a creature in the global_creaturelist.";
+                Log.error (os.str ());
+                return;
+            }
+            std::ostringstream os;
+            int mode; // mode of get_name ()
+#if (LANG == ENG)
+            mode = M_ARTICLE | M_NORMAL;
+#endif // (LANG == ENG)
+#if (LANG == HUN)
+            mode = M_ARTICLE | M_RAG_T;
+#endif // (LANG == HUN)
+            int attack = get_stat (S_ATTACK);
+            int d = dice ("1-10");
+            int defense = creature->get_stat (S_DEFENSE);
+            (*ostream) << std::setw (15) << get_name () << " Attack: " << std::setw (3) << attack << " + " << std::setw (2) << d 
+                << " Defense: " << std::setw (3) << defense;
+            os << std::setw (15) << get_name () << " Attack: " << std::setw (3) << attack << " + " << std::setw (2) << d 
+                << " Defense: " << std::setw (3) << defense;
+            if (attack + d > defense)
+            {
+                int hp = creature->get_stat (S_CURR_HP);
+                int damage = dice (get_damage ());
+                hp -= damage;
+                creature->set_iparam (K_HP, hp);
+                (*ostream) << " Damage: " << std::setw (3) << damage << " New HP: " << std::setw (3) << hp << std::endl;
+                os << " Damage: " << std::setw (3) << damage << " New HP: " << std::setw (3) << hp << std::endl;
+                if (hp <= 0)
+                {
+#if (LANG == ENG)
+                    (*ostream) << C_DO << "You killed " << creature->get_name (mode) << "!" << C_RST << std::endl;
+                    os << C_DO << get_name (M_ARTICLE | M_CAPITAL_FIRST) << " has killed " << creature->get_name (mode) << "!" << C_RST << std::endl;
+#endif // (LANG == ENG)
+#if (LANG == HUN)
+                    (*ostream) << C_DO << "Megölted " << creature->get_name (mode) << "!" << C_RST << std::endl;
+                    os << C_DO << get_name (M_ARTICLE | M_CAPITAL_FIRST) << " megölte " << creature->get_name (mode) << "!" << C_RST << std::endl;
+#endif // (LANG == HUN)
+                    // stop attack
+                    set_iparam (K_ATTACKED, 0);
+                    creature->set_iparam (K_ATTACKED, 0);
+                    creature->set_iparam (K_DEAD, 1);
+                }
+                else
+                {
+#if (LANG == ENG)
+                    (*ostream) << C_DO << "You have wounded " << creature->get_name (mode) << "." << C_RST << std::endl;
+                    os << C_DO << get_name (M_ARTICLE | M_CAPITAL_FIRST) << " has wounded " << creature->get_name (mode) << "." << C_RST << std::endl;
+#endif // (LANG == ENG)
+#if (LANG == HUN)
+                    (*ostream) << C_DO << "Megsebezted " << creature->get_name (mode) << "." << C_RST << std::endl;
+                    os << C_DO << get_name (M_ARTICLE | M_CAPITAL_FIRST) << " megsebesítette " << creature->get_name (mode) << "." << C_RST << std::endl;
+#endif // (LANG == HUN)
+                }
+                // the attacked creature will attack ourselves!!!
+                // FIXME check sHabit!!!
+                creature->set_iparam (K_ATTACKED, get_sn ());
+            }
+            else
+            {
+                (*ostream) << " No damage" << std::endl;
+                os << " No damage" << std::endl;
+            }
+            write_to_spectators (os.str (), *this);
+        }
+        else
+        {
+            // XXX Az eloleny valoszinuleg elpusztult... nem! azt az iDead valtozoval kellene jelezni
+            std::ostringstream os;
+            os << __INFO__ << "Internal error. The creature is not found in the global_creaturelist.";
+            Log.error (os.str ());
+        }
+    }
+}
+
 void CCreature::random_look ()
 {
     // look something or someone
     CThingList tl;
-    int rn = int (3.0 * rand () / (RAND_MAX + 1.0));
+    int rn = static_cast<int> (3.0 * rand () / (RAND_MAX + 1.0));
     switch (rn)
     {
         case 0:
@@ -370,7 +463,7 @@ void CCreature::random_look ()
     CThing *th = NULL;
     if (!tl.empty ())
     {
-        int rn = int ((float) tl.size () * rand () / (RAND_MAX + 1.0));
+        int rn = static_cast<int> (static_cast<float> (tl.size ()) * rand () / (RAND_MAX + 1.0));
         int j = 0;
         for (CThingListIt i = tl.begin (); i != tl.end (); i++, j++)
         {
@@ -395,7 +488,7 @@ void CCreature::random_say ()
         CStringVector sv;
         CSplit split;
         sv = split (K_LISTSEPARATOR, s);
-        int rn = int ((float) sv.size () * rand () / (RAND_MAX + 1.0));
+        int rn = static_cast<int> (static_cast<float> (sv.size ()) * rand () / (RAND_MAX + 1.0));
         int j = 0;
         for (CStringVectorIt i = sv.begin (); i != sv.end (); i++, j++)
         {
@@ -424,7 +517,7 @@ void CCreature::random_move ()
         CStringVector sv = split (K_LISTSEPARATOR, parent->get_sparam (CMap::K_EXITS));
         if (!sv.empty ())
         {
-            int rn = int ((float) sv.size () * rand () / (RAND_MAX + 1.0));
+            int rn = static_cast<int> (static_cast<float> (sv.size ()) * rand () / (RAND_MAX + 1.0));
             int j = 0;
             for (CStringVectorIt i = sv.begin (); i != sv.end (); i++, j++)
             {
@@ -461,39 +554,43 @@ void CCreature::random_move ()
 
 void CCreature::do_something ()
 {
-    std::ostringstream os;
-    childs_do_something ();
-    // If we are not player do something funny
-    if (!get_spectator ())
+    if (isAlive ())
     {
-        const float CHANCE = 100.0;
-        // random number
-        int rn = int (CHANCE * rand () / (RAND_MAX + 1.0));
-        if (rn == 0)
+        combat ();
+        childs_do_something ();
+        // If we are not a player do something funny
+        if (!get_spectator () && !isInCombat ())
         {
-            os.str ("");
-            os << get_name () << " (sn: " << get_sn () << ") does a random event.";
-            Log.debug (os.str ());
-            int rn = int (3.0 * rand () / (RAND_MAX + 1.0));
-            switch (rn)
+            const float CHANCE = 100.0;
+            // random number
+            int rn = static_cast<int> (CHANCE * rand () / (RAND_MAX + 1.0));
+            if (rn == 0)
             {
-                case 0:
-                    random_look ();
-                    break;
-                case 1:
-                    random_say ();
-                    break;
-                case 2:
-                    random_move ();
-                    break;
-                case 3:
-                    //random_attack ();
-                    break;
-                default:
-                    os.str ("");
-                    os << __INFO__ << "Internal error! Unknown random event.";
-                    Log.debug (os.str ());
-                    break;
+                std::ostringstream os;
+                os.str ("");
+                os << get_name () << " (sn: " << get_sn () << ") does a random event.";
+                Log.debug (os.str ());
+                int rn = static_cast<int> (3.0 * rand () / (RAND_MAX + 1.0));
+                switch (rn)
+                {
+                    case 0:
+                        random_look ();
+                        break;
+                    case 1:
+                        random_say ();
+                        break;
+                    case 2:
+                        random_move ();
+                        break;
+                    case 3:
+                        //random_attack (); // TODO write random attack! take into account the habit
+                        break;
+                    default:
+                        os.str ("");
+                        os << __INFO__ << "Internal error! Unknown random event.";
+                        Log.debug (os.str ());
+                        break;
+                }
             }
         }
     }
@@ -582,6 +679,14 @@ bool CCreature::parser (const std::string& text, signed long from_serial_number)
     return false;
 }
 
+void CCreature::write_to_spectators (const std::string& text, CThing& except_thing, bool only_this_place)
+{
+    // TODO rewrite write_to_spectators!
+    CThingList except_thinglist;
+    except_thinglist.push_back (&except_thing);
+    write_to_spectators (text, except_thinglist, only_this_place);
+}
+
 void CCreature::write_to_spectators (const std::string& text, CThingList& except_thinglist, bool only_this_place)
 {
     for (CThingListIt i = global_spectator_thinglist.begin (); i != global_spectator_thinglist.end (); i++)
@@ -596,12 +701,10 @@ void CCreature::write_to_spectators (const std::string& text, CThingList& except
         {
             CCreature *creature;
             creature = dynamic_cast<CCreature*> (*i);
-            if (creature != NULL)
+            if (creature)
             {
-                if (creature->ostream != NULL)
-                {
-                    *(creature->ostream) << text;
-                }
+                assert (creature->ostream != NULL);
+                *(creature->ostream) << text;
             }
             else
             {
@@ -659,10 +762,20 @@ void CCreature::cmd_say (const std::string& cmd, const std::string& params)
     }
     else
     {
+#if 0
+        if (isDead ())
+        {
+#if (LANG == ENG)
+            (*ostream) << C_DO << "You can't speak. You are dead." << C_RST << std::endl;
+#endif
+#if (LANG == HUN)
+            (*ostream) << C_DO << "Nem tudsz beszélni. Meghaltál." << C_RST << std::endl;
+#endif
+            return;
+        }
+#endif
         std::ostringstream os;
-        CThingList except;
 #warning "FIXME: int < 5: nem erti amit mondanak"
-        except.push_back (this);
         if (get_stat (S_INT) < 5)
         {
 #if (LANG == ENG)
@@ -685,7 +798,7 @@ void CCreature::cmd_say (const std::string& cmd, const std::string& params)
             os << C_DO << get_name (M_ARTICLE | M_CAPITAL_FIRST) << " azt mondja: " << C_RST << params << std::endl;
 #endif
         }
-        write_to_spectators (os.str (), except);
+        write_to_spectators (os.str (), *this);
     }
 }
 
@@ -728,8 +841,6 @@ void CCreature::cmd_look (const std::string& cmd, const std::string& params)
     if (regex.Matches (params))
     {
         std::ostringstream os;
-        CThingList except;
-        except.push_back (this);
         // There are only whitespaces in parameter string
         // The creature looks around in this place.
 #if (LANG == ENG)
@@ -754,8 +865,8 @@ void CCreature::cmd_look (const std::string& cmd, const std::string& params)
                 CThing *th = *i;
                 std::string name;
                 name = th->get_name ();
-                if ((th->get_type () == "item" && th->get_iparam (CItem::K_VISIBLE)) ||
-                        th->get_type () == "creature")
+                if ((th->get_type () == CItem::ITEM && th->get_iparam (CItem::K_VISIBLE)) ||
+                        th->get_type () == CCreature::CREATURE)
                 {
                     if (inventory_map.find (name) == inventory_map.end ())
                     {
@@ -834,7 +945,7 @@ void CCreature::cmd_look (const std::string& cmd, const std::string& params)
                 }
             }
         }
-        write_to_spectators (os.str (), except);
+        write_to_spectators (os.str (), *this);
     }
     else
     {
@@ -852,7 +963,7 @@ void CCreature::cmd_look (const std::string& cmd, const std::string& params)
             // look something in this place
             for (CThingListIt i = Childs.begin (); i != Childs.end (); i++)
             {
-                if (((*i)->get_type () == "item" || (*i)->get_type () == "creature") && (*i)->compare_name (params))
+                if (((*i)->get_type () == CItem::ITEM || (*i)->get_type () == CCreature::CREATURE) && (*i)->compare_name (params))
                 {
                     thing = *i;
                     break;
@@ -861,7 +972,7 @@ void CCreature::cmd_look (const std::string& cmd, const std::string& params)
             // look something in inventory
             for (CThingListIt i = childs.begin (); i != childs.end (); i++)
             {
-                if ((*i)->get_type () == "item" && (*i)->compare_name (params))
+                if ((*i)->get_type () == CItem::ITEM && (*i)->compare_name (params))
                 {
                     thing = *i;
                     break;
@@ -1115,8 +1226,6 @@ void CCreature::cmd_inventory (const std::string& cmd, const std::string& params
             return;
         }
     }
-    CThingList except; // list of exceptions
-    except.push_back (this);
     os.str ("");
 #if (LANG == ENG)
     (*ostream) << C_DO << "You draw up an inventory: " << C_RST << std::endl;
@@ -1126,7 +1235,7 @@ void CCreature::cmd_inventory (const std::string& cmd, const std::string& params
     (*ostream) << C_DO << "Leltározol: " << C_RST << std::endl;
     os << C_DO << get_name (M_CAPITAL_FIRST) << " leltározik." << C_RST << std::endl;
 #endif
-    write_to_spectators (os.str (), except);
+    write_to_spectators (os.str (), *this);
     if (!childs.empty ())
     {
         CInventoryMap inventory_map;
@@ -1134,7 +1243,7 @@ void CCreature::cmd_inventory (const std::string& cmd, const std::string& params
         for (CThingListIt i = childs.begin (); i != childs.end (); i++)
         {
             CThing *th = *i;
-            if (th->get_type () != "item") 
+            if (th->get_type () != CItem::ITEM) 
             {
                 continue;
             }
@@ -1374,8 +1483,6 @@ void CCreature::cmd_move (const std::string& cmd, const std::string& params)
                     {
                         if (cmd_name == "" || thing->compare_name (cmd_name))
                         {
-                            CThingList except;
-                            except.push_back (this);
                             os.str ("");
 #if (LANG == ENG)
                             (*ostream) << C_DO << "You go " << exits_map[cmd_exit] << "." << C_RST << std::endl;
@@ -1385,7 +1492,7 @@ void CCreature::cmd_move (const std::string& cmd, const std::string& params)
                             (*ostream) << C_DO << Upper (exits_map[cmd_exit]) << "mész." << C_RST << std::endl;
                             os << C_DO << get_name (M_CAPITAL_FIRST) << " " << exits_map[cmd_exit] << "megy." << C_RST << std::endl;
 #endif
-                            write_to_spectators (os.str (), except);
+                            write_to_spectators (os.str (), *this);
                             
                             move_to (*thing);
 
@@ -1396,7 +1503,7 @@ void CCreature::cmd_move (const std::string& cmd, const std::string& params)
 #if (LANG == HUN)
                             os << C_DO << get_name (M_IARTICLE | M_CAPITAL_FIRST) << " érkezik." << C_RST << std::endl;
 #endif
-                            write_to_spectators (os.str (), except);
+                            write_to_spectators (os.str (), *this);
 
                             cmd_look (CMD_LOOK, "");
                             ok = true;
@@ -1443,6 +1550,7 @@ void CCreature::cmd_move (const std::string& cmd, const std::string& params)
 void CCreature::cmd_pickup (const std::string& cmd, const std::string& params)
 {
     assert (ostream != NULL);
+
     std::ostringstream os;
     CRegEx regex ("(\\S+)\\s+(\\S+)");
     if (cmd == CMD_HELP && regex.Matches (params))
@@ -1487,8 +1595,6 @@ void CCreature::cmd_pickup (const std::string& cmd, const std::string& params)
 #if (LANG == HUN)
         mode = M_RAG_T;
 #endif
-        CThingList except;
-        except.push_back (this);
         CStringVector sv;
         CSplit split;
         sv = split ("\\s*,\\s*", params);
@@ -1511,10 +1617,10 @@ void CCreature::cmd_pickup (const std::string& cmd, const std::string& params)
             for (CThingListIt i = Childs.begin (); i != Childs.end (); i++)
             {
                 CThing *th = *i;
-                if ((name == CMD_ALL && th->get_iparam (CItem::K_MOVABLE))|| th->compare_name (name))
+                if (name == CMD_ALL || th->compare_name (name))
                 {
                     found = true;
-                    if (th->get_iparam (CItem::K_MOVABLE) && th->get_type () == "item" && 
+                    if (th->get_iparam (CItem::K_MOVABLE) && th->get_type () == CItem::ITEM && 
                             get_load_weight () + th->get_fparam (CItem::K_WEIGHT) <= get_loadability ())
                     {
                         std::string name2 = th->get_name (mode);
@@ -1572,7 +1678,7 @@ void CCreature::cmd_pickup (const std::string& cmd, const std::string& params)
             std::string s = inv.write ();
             (*ostream) << s << "." << C_RST << std::endl;
             os << s << "." << C_RST << std::endl;
-            write_to_spectators (os.str (), except);
+            write_to_spectators (os.str (), *this);
         }
     }
     else
@@ -1632,8 +1738,6 @@ void CCreature::cmd_drop (const std::string& cmd, const std::string& params)
 #if (LANG == HUN)
         mode = M_RAG_T;
 #endif
-        CThingList except;
-        except.push_back (this);
         CStringVector sv;
         CSplit split;
         sv = split ("\\s*,\\s*", params);
@@ -1654,7 +1758,7 @@ void CCreature::cmd_drop (const std::string& cmd, const std::string& params)
                 CThing *th = *i;
                 if (name == CMD_ALL || th->compare_name (name))
                 {
-                    if (th->get_iparam (CItem::K_MOVABLE) && th->get_type () == "item")
+                    if (th->get_iparam (CItem::K_MOVABLE) && th->get_type () == CItem::ITEM)
                     {
                         found = true;
                         if (inventory_map.find (th->get_name (mode)) == inventory_map.end ())
@@ -1710,7 +1814,7 @@ void CCreature::cmd_drop (const std::string& cmd, const std::string& params)
             std::string s = inv.write ();
             (*ostream) << s << "." << C_RST << std::endl;
             os << s << "." << C_RST << std::endl;
-            write_to_spectators (os.str (), except);
+            write_to_spectators (os.str (), *this);
         }
     }
     else
@@ -2269,15 +2373,119 @@ void CCreature::cmd_points (const std::string& cmd, const std::string& params)
     
     for (unsigned int i = 0; i < stat_name_vector.size (); i++)
     {
-        (*ostream) << std::left << std::setw (25) << Upper (stat_name_vector[i]) << get_stat (i) << std::endl;
+        (*ostream) << std::left << std::setw (25) << Upper (stat_name_vector[i]) 
+            << std::left << std::setw (3) << get_stat (i, false) << " (" << get_stat (i, true) << ")" << std::endl;
         if (i == 6 || i == 10)
+        {
             (*ostream) << std::endl;
+        }
     }
 #ifdef __DEBUG__
     (*ostream) << std::endl;
     (*ostream) << info (4);
     (*ostream) << std::endl;
 #endif
+}
+
+void CCreature::cmd_attack (const std::string& cmd, const std::string& params)
+{
+    assert (ostream != NULL);
+
+    std::ostringstream os;
+    CRegEx regex ("(\\S+)\\s+(\\S+)");
+    if (cmd == CMD_HELP && regex.Matches (params))
+    {
+        std::string help_cmd = regex.GetMatch (params, 1),
+                    help_params = regex.GetMatch (params, 2);
+        if (help_params == CMD_BRIEF)
+        {
+#if (LANG == ENG)
+            (*ostream) << "Attack a creature.";
+#endif
+#if (LANG == HUN)
+            (*ostream) << "Megtámad egy élõlényt.";
+#endif
+        }
+        else if (help_params == CMD_VERBOSE)
+        {
+#if (LANG == ENG)
+            (*ostream) << "Show debug information about the program." << std::endl;
+            (*ostream) << "Syntax: " << C_CMD << CMD_ATTACK << " <creature>" << C_RST << std::endl;
+            (*ostream) << "Example: " << C_CMD << CMD_ATTACK << " wolf" << C_RST << std::endl;
+#endif
+#if (LANG == HUN)
+            (*ostream) << "Megtámad egy élõlényt.";
+            (*ostream) << "Szintaktika: " << C_CMD << CMD_ATTACK << " <élõlény>" << C_RST << std::endl;
+            (*ostream) << "Például: " << C_CMD << CMD_ATTACK << " farkas" << C_RST << std::endl;
+#endif
+            (*ostream) << std::endl;
+        }
+        return;
+    }
+    if (params.empty ())
+    {
+#if (LANG == ENG)
+        (*ostream) << C_ERR << "No parameter. See help: " << C_CMD <<  CMD_HELP << " " << CMD_ATTACK << C_RST << std::endl;
+#endif // (LANG == ENG)
+#if (LANG == HUN)
+        (*ostream) << C_ERR << "Nincs parametér. Nézd meg a súgót: " << C_CMD <<  CMD_HELP << " " << CMD_ATTACK << C_RST << std::endl;
+#endif // (LANG == HUN)
+    }
+    else
+    {
+        CThingList Childs = parent->childs;
+        Childs.remove (this);
+        if (!Childs.empty ())
+        {
+            int mode; // mode of get_name ()
+#if (LANG == ENG)
+            mode = M_ARTICLE | M_NORMAL;
+#endif
+#if (LANG == HUN)
+            mode = M_ARTICLE | M_RAG_T;
+#endif
+            CThingList except;
+            except.push_back (this);
+            CStringVector sv;
+            CSplit split;
+            sv = split ("\\s*,\\s*", params);
+            bool found = false;
+            for (unsigned int j = 0; j < sv.size (); j++)
+            {
+                std::string name = sv[j];
+                for (CThingListIt i = Childs.begin (); i != Childs.end (); i++)
+                {
+                    CThing *th = *i;
+                    if (th->compare_name (name) && th->get_type () == CCreature::CREATURE)
+                    {
+                        found = true;
+                        // Mark the creature as attacked. Function attack() will handle the situation.
+                        set_iparam (K_ATTACKED, th->get_sn ());
+                        os.str ("");
+#if (LANG == ENG)
+                        (*ostream) << C_DO << "You have attacked " << th->get_name (mode) << "." << C_RST << std::endl;
+                        os << C_DO << get_name (M_ARTICLE | M_CAPITAL_FIRST) << " has attacked " << th->get_name (mode) << "." << C_RST << std::endl;
+#endif
+#if (LANG == HUN)
+                        (*ostream) << C_DO << "Megtámadtad " << th->get_name (mode) << "." << C_RST << std::endl;
+                        os << C_DO << get_name (M_ARTICLE | M_CAPITAL_FIRST) << " megtámadta " << th->get_name (mode) << "." << C_RST << std::endl;
+#endif
+                        write_to_spectators (os.str (), except);
+                        break;
+                    }
+                }
+            }
+            if (!found)
+            {
+#if (LANG == ENG)
+                (*ostream) << C_ERR << "You cannot attack." << C_RST << std::endl;
+#endif
+#if (LANG == HUN)
+                (*ostream) << C_ERR << "Nem tudod megtámadni." << C_RST << std::endl;
+#endif
+            }
+        }
+    }
 }
 
 void CCreature::cmd_about (const std::string& cmd, const std::string& params)
@@ -2435,7 +2643,7 @@ void CCreature::cmd_info (const std::string& cmd, const std::string& params)
             (*ostream) << " -v: beszédesség szintje (0-5). Alap: " << verbose_level << "." << std::endl;
             (*ostream) << " -a vagy -all: mindenben keres." << std::endl;
             (*ostream) << " -m vagy -maps: térképek közt keres." << std::endl;
-            (*ostream) << " -c vagy -creatures: él¿lények között keres." << std::endl;
+            (*ostream) << " -c vagy -creatures: élõlények között keres." << std::endl;
             (*ostream) << " -i vagy -items: tárgyak közt keres." << std::endl;
             (*ostream) << " serial number: sorszámot keres." << std::endl;
             (*ostream) << " a-b: sorszám tartományt keres." << std::endl;
@@ -2450,6 +2658,7 @@ void CCreature::cmd_info (const std::string& cmd, const std::string& params)
     }
     if (params.empty ())
     {
+        verbose_level = 2;
         (*ostream) << info (verbose_level) << std::endl;
         (*ostream) << parent->info (verbose_level) << std::endl;
     }
@@ -2573,7 +2782,7 @@ float CCreature::get_load_weight ()
         for (CThingListIt i = childs.begin (); i != childs.end (); i++)
         {
             CThing *th = *i;
-            if (th->get_type () == "item")
+            if (th->get_type () == CItem::ITEM)
             {
                 load += th->get_fparam (CItem::K_WEIGHT);
             }
@@ -2587,7 +2796,63 @@ float CCreature::get_loadability ()
     return (get_stat (S_BDY) + get_stat (S_STR)) * 2;
 }
 
-int CCreature::get_stat (int stat_type)
+std::string CCreature::get_damage ()
+{
+    std::string damage;
+    bool first = true;
+    if (!childs.empty ())
+    {
+        for (CThingListIt i = childs.begin (); i != childs.end (); i++)
+        {
+            CThing *th = *i;
+            if (th->get_type () == CItem::ITEM &&
+                    !th->get_sparam (CItem::K_WEAREDON).empty () &&
+                    !th->get_sparam (K_DAMAGE).empty ())
+            {
+                if (first)
+                {
+                    first = false;
+                }
+                else
+                {
+                    damage += ",";
+                }
+                damage += th->get_sparam (K_DAMAGE);
+            }
+        }
+    }
+    return damage;
+}
+
+std::string CCreature::get_damage_resistance ()
+{
+    std::string damage_resistance;
+    bool first = true;
+    if (!childs.empty ())
+    {
+        for (CThingListIt i = childs.begin (); i != childs.end (); i++)
+        {
+            CThing *th = *i;
+            if (th->get_type () == CItem::ITEM &&
+                    !th->get_sparam (CItem::K_WEAREDON).empty () &&
+                    !th->get_sparam (K_DAMAGE).empty ())
+            {
+                if (first)
+                {
+                    first = false;
+                }
+                else
+                {
+                    damage_resistance += ",";
+                }
+                damage_resistance += th->get_sparam (K_DAMAGE_RESISTANCE);
+            }
+        }
+    }
+    return damage_resistance;
+}
+
+int CCreature::get_stat (int stat_type, bool base)
 {
     int stat;
     switch (stat_type)
@@ -2604,16 +2869,21 @@ int CCreature::get_stat (int stat_type)
         case S_DEFENSE:
             stat = (get_stat (S_BDY) + get_stat (S_DEX)); // + képzettség szintje * 2
             break;
+        case S_DAMAGE:
+            stat = -1;
+            //stat = dice (get_sparam (K_DAMAGE));
         default:
             stat = CThing::get_stat (stat_type);
             break;
     }
-    if (!childs.empty ())
+    if (!base && !childs.empty ())
     {
         for (CThingListIt i = childs.begin (); i != childs.end (); i++)
         {
             CThing *th = *i;
-            if (th->get_type () == "item" && !th->get_sparam (CItem::K_WEAREDON).empty ())
+            // TODO not only items can change statistics (curses)!!!
+            if (th->get_type () == CItem::ITEM &&
+                    !th->get_sparam (CItem::K_WEAREDON).empty ())
             {
                 stat += th->get_stat (stat_type);
             }
@@ -2622,3 +2892,4 @@ int CCreature::get_stat (int stat_type)
     return stat;
 }
 
+// :set encoding=iso8869-2:
