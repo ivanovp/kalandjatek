@@ -4,7 +4,7 @@
  * Author:      Peter Ivanov
  * Modified by:
  * Created:     2005/04/26
- * Last modify: 2008-08-21 10:41:47 ivanovp {Time-stamp}
+ * Last modify: 2008-08-25 16:13:40 ivanovp {Time-stamp}
  * Copyright:   (C) Peter Ivanov, 2005
  * Licence:     GPL
  */
@@ -51,35 +51,36 @@ typedef CInventoryMap::iterator CInventoryMapIt;
 class CInventory
 {
 private:
-    std::ostream *os;
+    std::ostringstream *os;
+    /// Database for creating list of things.
+    CInventoryMap *inventory_map;
     
 public:
-    /// Database for creating list of things.
-    CInventoryMap inventory_map;
-
     /**
-     * Constructor with setting output stream.
-     * \param os Output stream.
+     * Constructor with setting the inventory map.
+     * @param inventory_map Inventory map to process.
      */
-    CInventory (std::ostream *os);
+    explicit CInventory (CInventoryMap &inventory_map);
     /// Constructor.
     CInventory ();
     /// Destructor.
     ~CInventory ();
 
     /**
-     * Setting output stream.
-     * \param os Output stream.
-     * \note If you use stream then write () returns empty string.
+     * Setting inventory map.
+     * \param inventory_map .
      */
-    void set_stream (std::ostream *os);
+    void set_inventory_map (CInventoryMap &inventory_map);
 
     /**
      * Creates the list of things.
-     * \return List of things if stream not initialized.
-     * \see set_stream
+     * \return List of things. Example: "two orcs, one sword and three bread"
      */
     std::string write ();
+
+    friend std::ostream& operator<< (std::ostream &os, CInventory &inv);
 };
+    
+std::ostream& operator<< (std::ostream &os, CInventory &inv);
 
 #endif // __INCLUDE_INV_H

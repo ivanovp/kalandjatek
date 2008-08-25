@@ -4,7 +4,7 @@
  * Author:      Peter Ivanov
  * Modified by:
  * Created:     2005/04/13
- * Last modify: 2008-08-25 14:31:18 ivanovp {Time-stamp}
+ * Last modify: 2008-08-25 16:08:43 ivanovp {Time-stamp}
  * Copyright:   (C) Peter Ivanov, 2005
  * Licence:     GPL
  */
@@ -411,13 +411,19 @@ void CCreature::combat ()
                     opponent->set_iparam (K_ATTACKED, 0);
                     opponent->set_iparam (K_DEAD, 1); // the opponent has perished...
                     // save original name as altname
+#if (LANG == ENG)
+                    const std::string body = "/body";
+#endif // (LANG == ENG)
+#if (LANG == HUN)
+                    const std::string body = "/hulla/hullát/holttest/holttestet";
+#endif // (LANG == HUN)
                     if (!opponent->get_sparam (K_ALTNAME).empty ())
                     {
-                        opponent->set_sparam (K_ALTNAME, opponent->get_sparam (K_ALTNAME) + "/" + opponent->get_name ());
+                        opponent->set_sparam (K_ALTNAME, opponent->get_sparam (K_ALTNAME) + "/" + opponent->get_name () + body);
                     }
                     else
                     {
-                        opponent->set_sparam (K_ALTNAME, opponent->get_name ());
+                        opponent->set_sparam (K_ALTNAME, opponent->get_name () + body);
                     }
                     // change name of the dead
 #if (LANG == ENG)
@@ -437,6 +443,10 @@ void CCreature::combat ()
                         if (childs2[i]->get_type () == CItem::ITEM ||
                                 childs2[i]->get_type () == CCreature::CREATURE)
                         {
+                            if (!childs2[i]->get_sparam (CItem::K_WEAREDON).empty ())
+                            {
+                                childs2[i]->set_sparam (CItem::K_WEAREDON, "");
+                            }
                             childs2[i]->move_to (*(opponent->parent));
                         }
                     }
@@ -922,8 +932,8 @@ void CCreature::cmd_look (const std::string& cmd, const std::string& params)
         // There are only whitespaces in parameter string
         // The creature looks around in this place.
 #if (LANG == ENG)
-        (*ostream) << C_DO << "You look around." << C_RST << std::endl;
-        os << C_DO << get_name (M_ARTICLE | M_CAPITAL_FIRST) << " looks around." << C_RST << std::endl;
+        (*ostream) << C_DO << "You are looking around." << C_RST << std::endl;
+        os << C_DO << get_name (M_ARTICLE | M_CAPITAL_FIRST) << " is looking around." << C_RST << std::endl;
 #endif
 #if (LANG == HUN)
         (*ostream) << C_DO << "Körülnézel." << C_RST << std::endl;
@@ -966,10 +976,8 @@ void CCreature::cmd_look (const std::string& cmd, const std::string& params)
 #if (LANG == HUN)
                 (*ostream) << "Itt van ";
 #endif
-                CInventory inv (ostream);
-                inv.inventory_map = inventory_map;
-                inv.write ();
-                (*ostream) << "." << std::endl;
+                CInventory inv (inventory_map);
+                (*ostream) << inv << "." << std::endl;
             }
             else
             {
@@ -1198,11 +1206,6 @@ void CCreature::cmd_look (const std::string& cmd, const std::string& params)
                 (*ostream) << std::endl;
                 cmd_inventory (CMD_INVENTORY, "");
             }
-#ifdef __DEBUG__
-            (*ostream) << std::endl;
-            (*ostream) << thing->info (4);
-            (*ostream) << std::endl;
-#endif
         }
         else
         {
@@ -1251,7 +1254,7 @@ void CCreature::cmd_inventory (const std::string& cmd, const std::string& params
     types_map[CItem::K_CAP]         = "Egy %s viselsz a fejeden.";
     types_map[CItem::K_TORSO]       = "Egy %s viselsz a törzseden.";
     types_map[CItem::K_ARMGUARDS]   = "Egy %s viselsz az alkarodon";
-    types_map[CItem::K_SHINGUARDS]  = "Egy %s viselsz a sípcsontodon.";
+    types_map[CItem::K_SHINGUARDS]  = "Egy %s viselsz a lábszáradon.";
 #endif
     CRegEx regex ("(\\S+)\\s+(\\S+)");
     if (cmd == CMD_HELP && regex.Matches (params))
@@ -1429,10 +1432,8 @@ void CCreature::cmd_inventory (const std::string& cmd, const std::string& params
 #if (LANG == HUN)
             (*ostream) << "Van nálad ";
 #endif
-            CInventory inv (ostream);
-            inv.inventory_map = inventory_map;
-            inv.write ();
-            (*ostream) << "." << std::endl;
+            CInventory inv (inventory_map);
+            (*ostream) << inv << "." << std::endl;
         }
         (*ostream) << std::endl;
 #if (LANG == ENG)
@@ -1758,18 +1759,16 @@ void CCreature::cmd_pickup (const std::string& cmd, const std::string& params)
         {
             os.str ("");
 #if (LANG == ENG)
-            (*ostream) << C_DO << "You pick up ";
-            os << C_DO << get_name (M_ARTICLE | M_CAPITAL_FIRST) << " picks up ";
+            (*ostream) << C_DO << "You picked up ";
+            os << C_DO << get_name (M_ARTICLE | M_CAPITAL_FIRST) << " picked up ";
 #endif
 #if (LANG == HUN)
             (*ostream) << C_DO << "Felveszel ";
             os << C_DO << get_name (M_ARTICLE | M_CAPITAL_FIRST) << " felvesz ";
 #endif
-            CInventory inv;
-            inv.inventory_map = inventory_map;
-            std::string s = inv.write ();
-            (*ostream) << s << "." << C_RST << std::endl;
-            os << s << "." << C_RST << std::endl;
+            CInventory inv (inventory_map);
+            (*ostream) << inv << "." << C_RST << std::endl;
+            os << inv << "." << C_RST << std::endl;
             write_to_spectators (os.str (), *this);
         }
     }
@@ -1850,7 +1849,8 @@ void CCreature::cmd_drop (const std::string& cmd, const std::string& params)
                 CThing *th = *i;
                 if (name == CMD_ALL || th->compare_name (name))
                 {
-                    if (th->get_iparam (CItem::K_MOVABLE) && th->get_type () == CItem::ITEM)
+                    if ((th->get_iparam (CItem::K_MOVABLE) && th->get_type () == CItem::ITEM) 
+                            || (th->get_iparam (CCreature::K_DEAD) && th->get_type () == CCreature::CREATURE))
                     {
                         found = true;
                         if (inventory_map.find (th->get_name (mode)) == inventory_map.end ())
@@ -1867,7 +1867,9 @@ void CCreature::cmd_drop (const std::string& cmd, const std::string& params)
                         th->set_sparam (CItem::K_WEAREDON, "");
                         th->move_to (*parent);
                         if (counter >= qty && name != CMD_ALL)
+                        {
                             break;
+                        }
                     }
                     else
                     {
@@ -1901,11 +1903,9 @@ void CCreature::cmd_drop (const std::string& cmd, const std::string& params)
             (*ostream) << C_DO << "Eldobsz ";
             os << C_DO << get_name (M_ARTICLE | M_CAPITAL_FIRST) << " eldob ";
 #endif
-            CInventory inv;
-            inv.inventory_map = inventory_map;
-            std::string s = inv.write ();
-            (*ostream) << s << "." << C_RST << std::endl;
-            os << s << "." << C_RST << std::endl;
+            CInventory inv (inventory_map);
+            (*ostream) << inv << "." << C_RST << std::endl;
+            os << inv << "." << C_RST << std::endl;
             write_to_spectators (os.str (), *this);
         }
     }
@@ -2488,11 +2488,6 @@ void CCreature::cmd_points (const std::string& cmd, const std::string& params)
             (*ostream) << std::endl;
         }
     }
-#ifdef __DEBUG__
-    (*ostream) << std::endl;
-    (*ostream) << info (4);
-    (*ostream) << std::endl;
-#endif
 }
 
 void CCreature::cmd_attack (const std::string& cmd, const std::string& params)
@@ -2742,7 +2737,7 @@ void CCreature::cmd_info (const std::string& cmd, const std::string& params)
 #if (LANG == ENG)
             (*ostream) << "Show debug information about the program." << std::endl;
             (*ostream) << "Syntax: " << C_CMD << CMD_INFO
-                << " [-v <verbose_level>] [-a|-all] [-m|-maps] [-c|-creatures] [-i|-items] [serial number] [a-b] [name]" 
+                << " [-v <verbose_level>] [-a|-all] [-m|-maps] [-c|-creatures] [-i|-items] [-l|-local] [serial number] [a-b] [name]" 
                 << C_RST << std::endl;
             (*ostream) << "Switches: " << std::endl;
             (*ostream) << " -v: set verbose level (0-5). Default: " << verbose_level << "." << std::endl;
@@ -2750,6 +2745,7 @@ void CCreature::cmd_info (const std::string& cmd, const std::string& params)
             (*ostream) << " -m or -maps: search in maps." << std::endl;
             (*ostream) << " -c or -creatures: search in creatures." << std::endl;
             (*ostream) << " -i or -items: search in items." << std::endl;
+            (*ostream) << " -l or -local: search in current location. (Default.)" << std::endl;
             (*ostream) << " serial number: search serial number." << std::endl;
             (*ostream) << " a-b: search range of serial numbers." << std::endl;
             (*ostream) << " name: search for a name." << std::endl;
@@ -2758,7 +2754,7 @@ void CCreature::cmd_info (const std::string& cmd, const std::string& params)
 #if (LANG == HUN)
             (*ostream) << "Hibajavításhoz hasznos adatokat ír ki." << std::endl;
             (*ostream) << "Szintaktika: " << C_CMD << CMD_INFO
-                << " [-v <verbose_level>] [-a|-all] [-m|-maps] [-c|-creatures] [-i|-items] [serial number] [a-b] [name]" 
+                << " [-v <verbose_level>] [-a|-all] [-m|-maps] [-c|-creatures] [-i|-items] [-l|-local] [serial number] [a-b] [name]" 
                 << C_RST << std::endl;
             (*ostream) << "Kapcsolók: " << std::endl;
             (*ostream) << " -v: beszédesség szintje (0-5). Alap: " << verbose_level << "." << std::endl;
@@ -2766,6 +2762,7 @@ void CCreature::cmd_info (const std::string& cmd, const std::string& params)
             (*ostream) << " -m vagy -maps: térképek közt keres." << std::endl;
             (*ostream) << " -c vagy -creatures: élõlények között keres." << std::endl;
             (*ostream) << " -i vagy -items: tárgyak közt keres." << std::endl;
+            (*ostream) << " -l vagy -local: a jelenlegi helyen keres. (Alapbeállítás.)" << std::endl;
             (*ostream) << " serial number: sorszámot keres." << std::endl;
             (*ostream) << " a-b: sorszám tartományt keres." << std::endl;
             (*ostream) << " name: nevet keres" << std::endl;
@@ -2777,117 +2774,101 @@ void CCreature::cmd_info (const std::string& cmd, const std::string& params)
         }
         return;
     }
-    if (params.empty ())
+    bool ok = false;
+    CStringVector sv;
+    CSplit split;
+    sv = split ("\\s+", params);
+    CThingListIt begin = parent->childs.begin (),
+                 end = parent->childs.end ();
+    CRegEx regexNum ("^(\\d+)$");
+    CRegEx regexRange ("^(\\d+)-(\\d+)$");
+    for (unsigned int j = 0; j < sv.size (); j++)
     {
-        verbose_level = 2;
-        (*ostream) << info (verbose_level) << std::endl;
-        (*ostream) << parent->info (verbose_level) << std::endl;
-    }
-    else
-    {
-        bool ok = false;
-        CStringVector sv;
-        CSplit split;
-        sv = split ("\\s+", params);
-        CThingListIt begin = global_thinglist.begin (),
-                     end = global_thinglist.end ();
-        CRegEx regexNum ("^(\\d+)$");
-        CRegEx regexRange ("^(\\d+)-(\\d+)$");
-        for (unsigned int j = 0; j < sv.size (); j++)
+        if (sv[j] == "-all" || sv[j] == "-a")
         {
-            if (sv[j] == "-all" || sv[j] == "-a")
+            begin = global_thinglist.begin (); 
+            end = global_thinglist.end ();
+        }
+        else if (sv[j] == "-maps" || sv[j] == "-m")
+        {
+            begin = CMap::global_maplist.begin (); 
+            end = CMap::global_maplist.end ();
+        }
+        else if (sv[j] == "-creatures" || sv[j] == "-c")
+        {
+            begin = CCreature::global_creaturelist.begin (); 
+            end = CCreature::global_creaturelist.end ();
+        }
+        else if (sv[j] == "-items" || sv[j] == "-i")
+        {
+            begin = CItem::global_itemlist.begin (); 
+            end = CItem::global_itemlist.end ();
+        }
+        else if (sv[j] == "-local" || sv[j] == "-l")
+        {
+            begin = parent->childs.begin (); 
+            end = parent->childs.end ();
+        }
+        else if (sv[j] == "-v")
+        {
+            if (sv.size () >= j)
             {
-                begin = global_thinglist.begin (); 
-                end = global_thinglist.end ();
-            }
-            else if (sv[j] == "-maps" || sv[j] == "-m")
-            {
-                begin = CMap::global_maplist.begin (); 
-                end = CMap::global_maplist.end ();
-            }
-            else if (sv[j] == "-creatures" || sv[j] == "-c")
-            {
-                begin = CCreature::global_creaturelist.begin (); 
-                end = CCreature::global_creaturelist.end ();
-            }
-            else if (sv[j] == "-items" || sv[j] == "-i")
-            {
-                begin = CItem::global_itemlist.begin (); 
-                end = CItem::global_itemlist.end ();
-            }
-            else if (sv[j] == "-v")
-            {
-                if (sv.size () >= j)
-                {
-                    std::string s = sv[j + 1];
-                    verbose_level = std::strtol (s.c_str (), NULL, 10);
-                    j++;
-                }
-            }
-            else if (regexNum.Matches (sv[j]))
-            {
-                // searching serial number
-                std::string s = regexNum.GetMatch (sv[j], 1);
-                int num = std::strtol (s.c_str (), NULL, 10);
-                for (CThingListIt i = begin; i != end; i++)
-                {
-                    if ((*i)->get_sn () == num)
-                    {
-                        (*ostream) << (*i)->info (verbose_level);
-                        break;
-                    }
-                }
-                ok = true;
-            }
-            else if (regexRange.Matches (sv[j]))
-            {
-                // search range of serial numbers
-                std::string s = regexRange.GetMatch (sv[j], 1);
-                int min = std::strtol (s.c_str (), NULL, 10);
-                s = regexRange.GetMatch (sv[j], 2);
-                int max = std::strtol (s.c_str (), NULL, 10);
-                for (CThingListIt i = begin; i != end; i++)
-                {
-                    if ((*i)->get_sn () >= min && (*i)->get_sn () <= max)
-                    {
-                        (*ostream) << (*i)->info (verbose_level);
-                    }
-                }
-                ok = true;
-            }
-            else
-            {
-                for (CThingListIt i = begin; i != end; i++)
-                {
-                    if ((*i)->get_id ().find (sv[j]) != std::string::npos ||
-                            (*i)->compare_name (sv[j]))
-                    {
-                        (*ostream) << (*i)->info (verbose_level);
-                    }
-                }
-                ok = true;
+                std::string s = sv[j + 1];
+                verbose_level = std::strtol (s.c_str (), NULL, 10);
+                j++;
             }
         }
-        if (!ok)
+        else if (regexNum.Matches (sv[j]))
+        {
+            // searching serial number
+            std::string s = regexNum.GetMatch (sv[j], 1);
+            int num = std::strtol (s.c_str (), NULL, 10);
+            for (CThingListIt i = begin; i != end; i++)
+            {
+                if ((*i)->get_sn () == num)
+                {
+                    (*ostream) << (*i)->info (verbose_level);
+                    break;
+                }
+            }
+            ok = true;
+        }
+        else if (regexRange.Matches (sv[j]))
+        {
+            // search range of serial numbers
+            std::string s = regexRange.GetMatch (sv[j], 1);
+            int min = std::strtol (s.c_str (), NULL, 10);
+            s = regexRange.GetMatch (sv[j], 2);
+            int max = std::strtol (s.c_str (), NULL, 10);
+            for (CThingListIt i = begin; i != end; i++)
+            {
+                if ((*i)->get_sn () >= min && (*i)->get_sn () <= max)
+                {
+                    (*ostream) << (*i)->info (verbose_level);
+                }
+            }
+            ok = true;
+        }
+        else
         {
             for (CThingListIt i = begin; i != end; i++)
             {
-                (*ostream) << (*i)->info (0);
+                if ((*i)->get_id ().find (sv[j]) != std::string::npos ||
+                        (*i)->compare_name (sv[j]))
+                {
+                    (*ostream) << (*i)->info (verbose_level);
+                }
             }
+            ok = true;
         }
     }
-#if 0
-    else
+    if (!ok)
     {
-#if (LANG == ENG)
-        (*ostream) << C_ERR << "Invalid parameter. See help: " << C_CMD <<  CMD_HELP << " " << CMD_INFO << C_RST << std::endl;
-#endif // (LANG == ENG)
-#if (LANG == HUN)
-        (*ostream) << C_ERR << "Ismeretlen parametér. Nézd meg a súgót: " << C_CMD <<  CMD_HELP << " " << CMD_INFO << C_RST << std::endl;
-#endif // (LANG == HUN)
-        return;
+        for (CThingListIt i = begin; i != end; i++)
+        {
+            (*ostream) << (*i)->info (verbose_level);
+        }
     }
-#endif
 }
 
 int CCreature::get_weight ()
