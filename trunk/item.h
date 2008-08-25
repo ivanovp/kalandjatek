@@ -4,7 +4,7 @@
  * Author:      Peter Ivanov
  * Modified by:
  * Created:     2005/04/13
- * Last modify: 2008-08-23 08:35:31 ivanovp {Time-stamp}
+ * Last modify: 2008-08-25 11:10:56 ivanovp {Time-stamp}
  * Copyright:   (C) Peter Ivanov, 2005
  * Licence:     GPL
  */
@@ -90,12 +90,6 @@ public:
      * \return Return the price of this item or given price.
      */
     std::string get_price_str (float price = -1);
-
-    /**
-     * Getting type of thing.
-     * \return Return the type of this thing.
-     */
-    virtual std::string get_type () { return "item"; };
 
     /**
      * Copy self.

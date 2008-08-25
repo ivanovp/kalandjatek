@@ -4,7 +4,7 @@
  * Author:      Peter Ivanov
  * Modified by:
  * Created:     2008-08-22
- * Last modify: 2008-08-23 14:14:08 ivanovp {Time-stamp}
+ * Last modify: 2008-08-25 14:31:32 ivanovp {Time-stamp}
  * Copyright:   (C) Peter Ivanov, 2005
  * Licence:     GPL
  */
@@ -42,8 +42,8 @@ int CDice::roll (const std::string& type)
         a = std::strtol (s1.c_str (), NULL, 10);
         b = std::strtol (s2.c_str (), NULL, 10);
         x = a + static_cast<int> (static_cast<float> (b - a) * rand () / (RAND_MAX + 1.0));
-        std::cout << "dice: " << std::left << std::setw (10) << type 
-            << " " << std::setw (5) << a << "-" << std::setw (5) << b << " x = " << std::setw (5) << x << std::endl;
+        //std::cout << "dice: " << std::left << std::setw (10) << type 
+        //    << " " << std::setw (5) << a << "-" << std::setw (5) << b << " x = " << std::setw (5) << x << std::endl;
     }
     else
     {

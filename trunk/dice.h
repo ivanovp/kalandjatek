@@ -4,7 +4,7 @@
  * Author:      Peter Ivanov
  * Modified by:
  * Created:     2008-08-22
- * Last modify: 2008-08-23 11:41:40 ivanovp {Time-stamp}
+ * Last modify: 2008-08-25 14:32:57 ivanovp {Time-stamp}
  * Copyright:   (C) Peter Ivanov, 2005
  * Licence:     GPL
  */
@@ -33,8 +33,17 @@ public:
     /// Destructor.
     ~CDice ();
 
+    /**
+     * Roll the dice!
+     *
+     * @param type Dice type. Format: "min-max". For a cube dice: "1-6".
+     * @return The result of rolling.
+     */
     int roll (const std::string& type);
 
+    /**
+     * Same as function roll. @see roll()
+     */
     int operator() (const std::string& type) { return roll (type); }
 };
 

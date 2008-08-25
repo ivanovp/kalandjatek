@@ -4,7 +4,7 @@
  * Author:      Peter Ivanov
  * Modified by:
  * Created:     2005/01/13
- * Last modify: 2008-08-23 13:52:35 ivanovp {Time-stamp}
+ * Last modify: 2008-08-25 13:35:07 ivanovp {Time-stamp}
  * Copyright:   (C) Peter Ivanov, 2005
  * Licence:     GPL
  */
@@ -400,25 +400,35 @@ std::string CThing::get_name (int mode)
 #endif
 #if (LANG == HUN)
         if (mgh.Matches (name))
+        {
             s << "az ";
+        }
         else
+        {
             s << "a ";
+        }
 #endif
     }
     if (iarticle && get_iparam (K_NOUN) == 0)
     {
 #if (LANG == ENG)
         if (mgh.Matches (name))
+        {
             s << "an ";
+        }
         else
+        {
             s << "a ";
+        }
 #endif
 #if (LANG == HUN)
         s << "egy ";
 #endif
     }
     if (Mode == 0)
+    {
         s << name;
+    }
 #if (LANG == HUN)
     if (Mode > 0)
     {
@@ -530,6 +540,32 @@ bool CThing::set_iparam (const std::string& variable, const int& value)
     return true;
 }
 
+int CThing::inc_iparam (const std::string& variable, const int& value)
+{
+    if (variable[0] != 'i')
+    {
+        std::ostringstream os;
+        os << __INFO__ << "First character of variable must be 'i'!";
+        Log.error (os.str ());
+        return 0;
+    }
+    iparams[variable] += value;
+    return iparams[variable];
+}
+
+int CThing::dec_iparam (const std::string& variable, const int& value)
+{
+    if (variable[0] != 'i')
+    {
+        std::ostringstream os;
+        os << __INFO__ << "First character of variable must be 'i'!";
+        Log.error (os.str ());
+        return 0;
+    }
+    iparams[variable] -= value;
+    return iparams[variable];
+}
+
 int CThing::get_iparam (const std::string& variable)
 {
     if (iparams.find (variable) != iparams.end ())
@@ -611,13 +647,6 @@ void CThing::childs_do_something ()
         // after calling do_something() the list iterator could be faulty!!!
         // (because the creatures can move to another place!)
         std::copy (childs.begin (), childs.end (), std::back_inserter (childs2));
-#if 0
-        for (CThingListIt i = childs.begin (); i != childs.end (); i++)
-        {
-            CThing *th = *i;
-            childs2.push_back (th);
-        }
-#endif
         for (unsigned int i = 0; i < childs2.size (); i++)
         {
             childs2[i]->do_something ();
