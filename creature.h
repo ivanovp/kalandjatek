@@ -4,7 +4,7 @@
  * Author:      Peter Ivanov
  * Modified by:
  * Created:     2005/04/13
- * Last modify: 2008-08-25 13:45:12 ivanovp {Time-stamp}
+ * Last modify: 2008-08-25 17:39:45 ivanovp {Time-stamp}
  * Copyright:   (C) Peter Ivanov, 2005
  * Licence:     GPL
  */
@@ -103,7 +103,7 @@ public:
     static const std::string CMD_PICKUP;
     static const std::string CMD_DROP;
     static const std::string CMD_ALIAS;
-    static const std::string CMD_BRINGOUT;
+    static const std::string CMD_USE;
     static const std::string CMD_PUTAWAY;
     static const std::string CMD_POINTS;
     static const std::string CMD_ATTACK;
@@ -235,7 +235,7 @@ public:
      * Put text to spectators stream.
      * \param text Text to send.
      * \param except_thing Don't send text to the creature.
-     * \param only_this_place If creature is in this place (pointer of parents equal) then send text.
+     * \param only_this_place If spectator creatures are in this place (pointer of parents are equal), we'll send text to them.
      */
     void write_to_spectators (const std::string& text, CThing& except_thing, bool only_this_place = true);
 
@@ -243,7 +243,7 @@ public:
      * Put text to spectators stream.
      * \param text Text to send.
      * \param except_thinglist Don't send text to the creatures in the list.
-     * \param only_this_place If creature is in this place (pointer of parents equal) then send text.
+     * \param only_this_place If spectator creatures are in this place (pointer of parents are equal), we'll send text to them.
      */
     void write_to_spectators (const std::string& text, CThingList& except_thinglist, bool only_this_place = true);
 
@@ -285,7 +285,7 @@ public:
     /**
      * Wear armours and clothes. Put on jewellery. Wield items. So bring out items.
      */
-    void cmd_bringout (const std::string& cmd, const std::string& params);
+    void cmd_use (const std::string& cmd, const std::string& params);
     
     /**
      * Take off armours and clothes. Remove jewellery. So put away items.

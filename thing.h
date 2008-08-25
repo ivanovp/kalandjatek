@@ -4,7 +4,7 @@
  * Author:      Peter Ivanov
  * Modified by:
  * Created:     2005/01/13
- * Last modify: 2008-08-25 13:38:03 ivanovp {Time-stamp}
+ * Last modify: 2008-08-25 17:21:11 ivanovp {Time-stamp}
  * Copyright:   (C) Peter Ivanov, 2005
  * Licence:     GPL
  */
@@ -301,6 +301,7 @@ public:
      * Find thing in parent of thing childs.
      * \param id The identifier of thing
      * \param thinglist Find in the thinglist.
+     * \param recursive true: Find in childs of thing.
      * \return Pointer to thing or NULL if not found.
      */
     CThing* find (const std::string& id, CThingList& thinglist, bool recursive = true);
@@ -309,6 +310,7 @@ public:
      * Find thing in parent of thing childs.
      * \param sn The serial number of thing
      * \param thinglist Find in the thinglist.
+     * \param recursive true: Find in childs of thing.
      * \return Pointer to thing or NULL if not found.
      */
     CThing* find (const int sn, CThingList& thinglist, bool recursive = true);
