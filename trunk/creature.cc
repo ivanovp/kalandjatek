@@ -4,7 +4,7 @@
  * Author:      Peter Ivanov
  * Modified by:
  * Created:     2005/04/13
- * Last modify: 2008-08-25 16:08:43 ivanovp {Time-stamp}
+ * Last modify: 2008-08-25 17:43:44 ivanovp {Time-stamp}
  * Copyright:   (C) Peter Ivanov, 2005
  * Licence:     GPL
  */
@@ -54,7 +54,7 @@ const std::string CCreature::CMD_DOWN        = "down";
 const std::string CCreature::CMD_PICKUP      = "pickup";
 const std::string CCreature::CMD_DROP        = "drop";
 const std::string CCreature::CMD_ALIAS       = "alias";
-const std::string CCreature::CMD_BRINGOUT    = "bringout";
+const std::string CCreature::CMD_USE         = "use";
 const std::string CCreature::CMD_PUTAWAY     = "putaway";
 const std::string CCreature::CMD_POINTS      = "points";
 const std::string CCreature::CMD_ATTACK      = "attack";
@@ -87,7 +87,7 @@ const std::string CCreature::CMD_DOWN        = "le";
 const std::string CCreature::CMD_PICKUP      = "felvesz";
 const std::string CCreature::CMD_DROP        = "eldob";
 const std::string CCreature::CMD_ALIAS       = "álnév";
-const std::string CCreature::CMD_BRINGOUT    = "elõvesz";
+const std::string CCreature::CMD_USE         = "elõvesz";
 const std::string CCreature::CMD_PUTAWAY     = "eltesz";
 const std::string CCreature::CMD_POINTS      = "pontok";
 const std::string CCreature::CMD_ATTACK      = "támad";
@@ -95,7 +95,7 @@ const std::string CCreature::CMD_ABOUT       = "névjegy";
 const std::string CCreature::CMD_HELP        = "súgó";
 const std::string CCreature::CMD_HELP2       = "?";
 const std::string CCreature::CMD_INFO        = "info";
-// parameters;
+// parameters
 const std::string CCreature::CMD_SELF        = "magam";
 const std::string CCreature::CMD_ALL         = "mindent";
 const std::string CCreature::CMD_BRIEF       = "-rövid";
@@ -146,7 +146,7 @@ void CCreature::init ()
     parser_map[CMD_PICKUP] = new CCmdFunctor<CCreature> (this, &CCreature::cmd_pickup);
     parser_map[CMD_DROP] = new CCmdFunctor<CCreature> (this, &CCreature::cmd_drop);
     parser_map[CMD_ALIAS] = new CCmdFunctor<CCreature> (this, &CCreature::cmd_alias);
-    parser_map[CMD_BRINGOUT] = new CCmdFunctor<CCreature> (this, &CCreature::cmd_bringout);
+    parser_map[CMD_USE] = new CCmdFunctor<CCreature> (this, &CCreature::cmd_use);
     parser_map[CMD_PUTAWAY] = new CCmdFunctor<CCreature> (this, &CCreature::cmd_putaway);
     parser_map[CMD_POINTS] = new CCmdFunctor<CCreature> (this, &CCreature::cmd_points);
     parser_map[CMD_ATTACK] = new CCmdFunctor<CCreature> (this, &CCreature::cmd_attack);
@@ -1198,6 +1198,15 @@ void CCreature::cmd_look (const std::string& cmd, const std::string& params)
                         }
                     }
                 }
+                if (creature->isDead ())
+                {
+#if (LANG == ENG)
+                    (*ostream) << C_HL << "It is dead." << C_RST << std::endl;
+#endif
+#if (LANG == HUN)
+                    (*ostream) << C_HL << "Halott." << C_RST << std::endl;
+#endif
+                }
             }
 
             write_to_spectators (os.str (), except);
@@ -2037,7 +2046,7 @@ void CCreature::cmd_alias (const std::string& cmd, const std::string& params)
 #if (LANG == HUN)
                     (*ostream) << C_DO << "Álnév létrehozása: " << C_HL << alias_name << C_RST << " = " << C_CMD << alias_cmd << C_RST << "." << std::endl;
 #endif
-                    // If the functor not exists then we create one...
+                    // If the functor not exists we'll create one...
                     if (!parser_map[alias_name])
                     {
                         parser_map[alias_name] = new CCmdFunctor<CCreature> (this, &CCreature::cmd_alias);
@@ -2101,7 +2110,7 @@ void CCreature::cmd_alias (const std::string& cmd, const std::string& params)
     }
 }
 
-void CCreature::cmd_bringout (const std::string& cmd, const std::string& params)
+void CCreature::cmd_use (const std::string& cmd, const std::string& params)
 {
     assert (ostream != NULL);
 
@@ -2184,13 +2193,13 @@ void CCreature::cmd_bringout (const std::string& cmd, const std::string& params)
         {
 #if (LANG == ENG)
             (*ostream) << "Wear armours and clothes. Put on jewellery. Wield items." << std::endl;
-            (*ostream) << "Syntax: " << C_CMD << CMD_BRINGOUT << " <item>[, <item>]" << C_RST << std::endl;
-            (*ostream) << "Example: " << C_CMD << CMD_BRINGOUT << " cloak" << C_RST << std::endl;
+            (*ostream) << "Syntax: " << C_CMD << CMD_USE << " <item>[, <item>]" << C_RST << std::endl;
+            (*ostream) << "Example: " << C_CMD << CMD_USE << " cloak" << C_RST << std::endl;
 #endif
 #if (LANG == HUN)
             (*ostream) << "Páncélok, ruhák, ékszerek viselése, fegyverek kézbevétele." << std::endl;
-            (*ostream) << "Szintaktika: " << C_CMD << CMD_BRINGOUT << " <tárgy>[, <tárgy>]" << C_RST << std::endl;
-            (*ostream) << "Például: " << C_CMD << CMD_BRINGOUT << " köpeny" << C_RST << std::endl;
+            (*ostream) << "Szintaktika: " << C_CMD << CMD_USE << " <tárgy>[, <tárgy>]" << C_RST << std::endl;
+            (*ostream) << "Például: " << C_CMD << CMD_USE << " köpeny" << C_RST << std::endl;
 #endif
             (*ostream) << std::endl;
         }

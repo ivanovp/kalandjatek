@@ -4,7 +4,7 @@
  * Author:      Peter Ivanov
  * Modified by:
  * Created:     2005/04/18
- * Last modify: 2008-08-22 12:44:43 ivanovp {Time-stamp}
+ * Last modify: 2008-08-25 17:20:24 ivanovp {Time-stamp}
  * Copyright:   (C) Peter Ivanov, 2005
  * Licence:     GPL
  */
@@ -112,7 +112,7 @@ public:
      * \param l1 Search list.
      * \param l2 Replacement list.
      * \param text Text to be translating.
-     * \param flags @ee flags_t.
+     * \param flags @see flags_t.
      * \return If lists are valid: number of replaced characters. If lists are invalid: -1
      */
     int tr (const std::string& l1, const std::string& l2, std::string& text, flags_t flags = TR_NORMAL);
