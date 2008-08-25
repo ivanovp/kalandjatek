@@ -4,7 +4,7 @@
  * Author:      Peter Ivanov
  * Modified by:
  * Created:     2005/04/14
- * Last modify: 2008-08-22 20:54:57 ivanovp {Time-stamp}
+ * Last modify: 2008-08-25 09:41:34 ivanovp {Time-stamp}
  * Copyright:   (C) Peter Ivanov, 2005
  * Licence:     GPL
  */
@@ -26,9 +26,9 @@ const char* CApp::DEFAULT_CREATURE_CFG = "creature.cfg";
 const char* CApp::DEFAULT_MAP_CFG = "map.cfg";
 const char* CApp::DEFAULT_PLAYER_ID = "player";
 #if (LANG == HUN)
-const char* CApp::DEFAULT_ALIASES = ".:pontok/':mond/n:néz/l:leltár -l";
+const char* CApp::DEFAULT_ALIASES = ".:pontok/':mond/n:néz/l:leltár -l/t:támad";
 #else
-const char* CApp::DEFAULT_ALIASES = ".:points/':say/l:look/i:inventory -l";
+const char* CApp::DEFAULT_ALIASES = "a:attack/.:points/':say/l:look/i:inventory -l";
 #endif
 const int CApp::DEFAULT_AUTO_SCROLL = 1;
 const char* CApp::DEFAULT_LOG_FILE = "kj.log";
@@ -71,31 +71,17 @@ void CApp::init_log ()
     // This one will write to display
     log4cpp::Appender* appd_display = new log4cpp::OstreamAppender ("OstreamAppender", &std::cout);
 
-    // This one will append to a local syslog.
-    //log4cpp::Appender* appd_file = new 
-    //     log4cpp::SyslogAppender ("SyslogAppender", "test2");
-    
-    // This one will append to a remote syslog.
-    //log4cpp::Appender* appd_file = new log4cpp::RemoteSyslogAppender ("SyslogAppender", 
-    //     "test2","remote.host.com", LOG_LOCAL6);
-
     // 2. Instantiate a layout object, which tells how to format the log.
     // Two layouts come already available in log4cpp unless you create your own.
     // BasicLayout includes a time stamp
     log4cpp::PatternLayout* layout_file = new log4cpp::PatternLayout ();
-    //layout_file->setConversionPattern ("%d %c %p: %m%n");
     layout_file->setConversionPattern ("%d %p %m%n");
     log4cpp::PatternLayout* layout_display = new log4cpp::PatternLayout ();
-    //layout_display->setConversionPattern (">>> %c %p: %m%n");
     layout_display->setConversionPattern ("%m%n");
 
     // 3. attach the layout object to the appender object
     appd_file->setLayout (layout_file);
     appd_display->setLayout (layout_display);
-
-    // 4. Instantiate the category object you may extract the root category, 
-    // but it is usually more practical to directly instance a child category
-    //log4cpp::Category& Log = log4cpp::Category::getInstance ("test2");
 
     // 5a. 
     // An Appender when added to a category becomes an additional output 

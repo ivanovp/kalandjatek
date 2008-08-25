@@ -4,7 +4,7 @@
  * Author:      Peter Ivanov
  * Modified by:
  * Created:     2005/04/13
- * Last modify: 2008-08-23 14:36:05 ivanovp {Time-stamp}
+ * Last modify: 2008-08-25 13:45:12 ivanovp {Time-stamp}
  * Copyright:   (C) Peter Ivanov, 2005
  * Licence:     GPL
  */
@@ -130,6 +130,8 @@ public:
 
     static const std::string K_ATTACKED;
     static const std::string K_DEAD;
+    static const std::string K_HP_REGEN_COUNT;
+    static const std::string K_MP_REGEN_COUNT;
 
     static CThingList global_creaturelist;
 
@@ -196,6 +198,11 @@ public:
      * If the creature is attacking somebody it will be handled here. Periodic event. Called from do_something.
      */
     virtual void combat ();
+
+    /**
+     * Increasing HP/MP. Periodic event. Called from do_something.
+     */
+    virtual void regenerate ();
 
     /**
      * Non-player creature look somewho/something/around. Random event. Called from do_something.

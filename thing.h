@@ -4,7 +4,7 @@
  * Author:      Peter Ivanov
  * Modified by:
  * Created:     2005/01/13
- * Last modify: 2008-08-23 13:52:44 ivanovp {Time-stamp}
+ * Last modify: 2008-08-25 13:38:03 ivanovp {Time-stamp}
  * Copyright:   (C) Peter Ivanov, 2005
  * Licence:     GPL
  */
@@ -232,6 +232,22 @@ public:
      * \param value Value of variable.
      */
     bool set_iparam (const std::string& variable, const int& value);
+
+    /**
+     * Increase integer parameter.
+     *
+     * \param variable First character of variable must be 'i'.
+     * \param value Variable to be increased with value.
+     */
+    int inc_iparam (const std::string& variable, const int& value);
+
+    /**
+     * Decrease integer parameter.
+     *
+     * \param variable First character of variable must be 'i'.
+     * \param value Variable to be decreased with value.
+     */
+    int dec_iparam (const std::string& variable, const int& value);
 
     /**
      * Get integer parameter.
