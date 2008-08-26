@@ -1,0 +1,31 @@
+<?xml version = '1.0' encoding = 'UTF-8'?>
+<universe>
+  <map id="mezo" >
+    <name>Mező</name>
+    <descr>Egy zöld mezőn állsz.</descr>
+    <ragok>
+      <ragValVel>Mezővel</ragValVel>
+      <ragT>Mezőt</ragT>
+      <ragRaRe>Mezőre</ragRaRe>
+      <ragBol>Mezőből</ragBol>
+      <ragRol>Mezőről</ragRol>
+      <ragBaBe>Mezőbe</ragBaBe>
+    </ragok>
+    <altName/>
+    <child>
+      <creature count="2" id="nyul" />
+      <creature count="2" id="farkas" />
+      <item count="1" id="torkard" />
+      <item count="1" id="rovid_kard" />
+    </child>
+    <exit>
+      <exit-point direction="é" id="bokrok" />
+      <exit-point direction="d" id="hazak" />
+      <exit-point direction="é" >bokrok</exit-point>
+      <exit-point>
+        <id>bokrok</id>
+        <direction>é</direction>
+      </exit-point>
+    </exit>
+  </map>
+</universe>
