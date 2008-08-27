@@ -4,7 +4,7 @@
  * Author:      Peter Ivanov
  * Modified by:
  * Created:     2005/01/13
- * Last modify: 2008-08-25 17:21:11 ivanovp {Time-stamp}
+ * Last modify: 2008-08-27 13:23:43 ivanovp {Time-stamp}
  * Copyright:   (C) Peter Ivanov, 2005
  * Licence:     GPL
  */
@@ -316,7 +316,7 @@ public:
     CThing* find (const int sn, CThingList& thinglist, bool recursive = true);
 
     /** 
-     * Shows informations (only for debugging).
+     * Shows parameters of object (only for debugging).
      */
     virtual std::string info (int verbose_level = 0);
 

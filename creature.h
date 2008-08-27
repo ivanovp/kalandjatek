@@ -4,7 +4,7 @@
  * Author:      Peter Ivanov
  * Modified by:
  * Created:     2005/04/13
- * Last modify: 2008-08-25 17:39:45 ivanovp {Time-stamp}
+ * Last modify: 2008-08-27 15:10:49 ivanovp {Time-stamp}
  * Copyright:   (C) Peter Ivanov, 2005
  * Licence:     GPL
  */
@@ -303,7 +303,7 @@ public:
     void cmd_attack (const std::string& cmd, const std::string& params);
 
     /**
-     * Show informations about author and program.
+     * Show information about the author and the software.
      */
     void cmd_about (const std::string& cmd, const std::string& params);
 

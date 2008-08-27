@@ -4,7 +4,7 @@
  * Author:      Peter Ivanov
  * Modified by:
  * Created:     2005/01/13
- * Last modify: 2008-08-25 13:35:07 ivanovp {Time-stamp}
+ * Last modify: 2008-08-27 13:24:50 ivanovp {Time-stamp}
  * Copyright:   (C) Peter Ivanov, 2005
  * Licence:     GPL
  */
@@ -370,6 +370,7 @@ std::string CThing::get_name (int mode)
     std::string name = get_sparam (K_NAME);
     // Reguláris kifejezés annak megállapítására, hogy
     // a szöveg magánhangzóval kezdõdik-e
+    // Regular expression to determine, that the text begins with vowel
     CRegEx mgh ("^[aáeéiíoóöõuúüûAÁEÉIÍOÓÖÕUÚÜÛ]");
     if (Mode & M_ARTICLE)
     {
@@ -449,8 +450,6 @@ std::string CThing::get_name (int mode)
 #endif
     if (capital_first)
     {
-        //std::string s2 = s.str ();
-        // s2[0] = s2[0] & 0xDF; // ok for english
         s.str (Upper (s.str ()));
     }
     return s.str ();
@@ -461,21 +460,30 @@ bool CThing::compare_name (const std::string& name)
     CStringVector sv;
     CSplit split;
     if (lower (name) == lower (get_sparam (K_NAME)))
+    {
         return true;
+    }
 #if (LANG == HUN)
     sv = split (K_LISTSEPARATOR, get_sparam (K_RAGOK));
     for (unsigned int i = 0; i < sv.size (); i++)
     {
         if (lower (name) == lower (sv[i]))
+        {
             return true;
+        }
     }
 #endif
-#warning "FIXME: compare_name tobbes szam (sPlural)"
     sv = split (K_LISTSEPARATOR, get_sparam (K_ALTNAME));
     for (unsigned int i = 0; i < sv.size (); i++)
     {
         if (lower (name) == lower (sv[i]))
+        {
             return true;
+        }
+    }
+    if (lower (name) == lower (get_sparam (K_PLURAL)))
+    {
+        return true;
     }
     return false;
 }
@@ -521,8 +529,8 @@ const std::string& CThing::get_sparam (const std::string& variable)
     }
     else
     {
-        // FIXME valamit tenni kell-e ha nincs meg a parameter?
-        //std::cout << variable << " not found! Returning empty string!" << std::endl;
+        // XXX Parameter not found! Returning an empty string. 
+        // Shall I throw an exception?
         return empty_string;
     }
 }
@@ -574,6 +582,7 @@ int CThing::get_iparam (const std::string& variable)
     }
     else
     {
+        // XXX Parameter not found! Returning zero. Shall I throw an exception?
         return 0;
     }
 }
@@ -599,6 +608,7 @@ float CThing::get_fparam (const std::string& variable)
     }
     else
     {
+        // XXX Parameter not found! Returning zero. Shall I throw an exception?
         return 0;
     }
 }
@@ -637,8 +647,6 @@ void CThing::do_something ()
 void CThing::childs_do_something ()
 {
     std::ostringstream os;
-    //os << __INFO__ << __PRETTY_FUNCTION__ << " " << get_name () << " (sn: " << get_sn () << ")";
-    //Log.debug (os.str ());
     if (!childs.empty ())
     {
         std::vector<CThing*> childs2;
@@ -715,9 +723,13 @@ std::string CThing::info (int verbose_level)
         os << "descr: [" << get_descr () << "]" << std::endl;
         if (verbose_level <= 2) return os.str ();
         if (parent)
+        {
             os << "parent: " << parent->get_id () << " (sn: " << parent->get_sn () << ")" << std::endl;
+        }
         else
+        {
             os << "parent: NONE" << std::endl;
+        }
         os << "childs: " << childs.size () << " thing(s)" << std::endl;
         if (verbose_level <= 3) return os.str ();
         if (verbose_level >= 4)
