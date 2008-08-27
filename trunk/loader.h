@@ -4,7 +4,7 @@
  * Author:      Peter Ivanov
  * Modified by:
  * Created:     2005/04/13
- * Last modify: 2008-08-21 15:31:07 ivanovp {Time-stamp}
+ * Last modify: 2008-08-27 13:26:06 ivanovp {Time-stamp}
  * Copyright:   (C) Peter Ivanov, 2005
  * Licence:     GPL
  */
@@ -83,7 +83,9 @@ bool CLoader<CAnyThing>::load (CThingList& thinglist, const std::string& filenam
             std::string id = cfg.get_section ();
             // Process sChilds's data and others...
             if (thing)
+            {
                 thing->setup ();
+            }
             thing = new CAnyThing;
             if (thing->find (id, thing->global_thinglist) != NULL)
             {
@@ -167,7 +169,9 @@ bool CLoader<CAnyThing>::load (CThingList& thinglist, const std::string& filenam
     
     // We don't forget to load the last thing's childs...
     if (thing)
+    {
         thing->setup ();
+    }
     
     os.str ("");
 #if (LANG == ENG)
