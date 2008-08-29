@@ -1,4 +1,4 @@
-. Random events are not supported in console mode. Calling of 
++ Random events are not supported in console mode. Calling of 
   CApp::do_something () is not possible.
 ~ If compiled with GTKMM option, some items have zero price.
   Without GTKMM price is fine.
