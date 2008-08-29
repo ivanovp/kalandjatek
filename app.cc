@@ -4,13 +4,18 @@
  * Author:      Peter Ivanov
  * Modified by:
  * Created:     2005/04/14
- * Last modify: 2008-08-25 09:41:34 ivanovp {Time-stamp}
+ * Last modify: 2008-08-29 13:31:07 ivanovp {Time-stamp}
  * Copyright:   (C) Peter Ivanov, 2005
  * Licence:     GPL
  */
 
 #include <cstdlib>
 #include <ctime>
+#ifndef GTKMM
+#include <poll.h>
+#include <cstdio>
+#include <cstdlib>
+#endif // !GKTMM
 
 #include "app.h"
 #include "debug.h"
@@ -708,37 +713,37 @@ void CApp::on_quit ()
 
 void CApp::on_entry ()
 {
-    Glib::ustring buf = entry->get_text ();
-    insert (text_buffer->end (), std::string (C_PROMPT) + "$ " + C_RST + C_PROMPT_CMD + buf + C_RST + "\n");
+    Glib::ustring input = entry->get_text ();
+    insert (text_buffer->end (), std::string (C_PROMPT) + "$ " + C_RST + C_PROMPT_CMD + input + C_RST + "\n");
 #ifdef __DEBUG__
-    if (buf[0] == '!')
+    if (input[0] == '!')
     {
         insert (text_buffer->end (), 
                 Glib::convert (
-                    show_universe (buf[1] >= '0' && buf[1] <= '9' ? buf[1] - '0' : 2), "utf8", "iso-8859-2")
+                    show_universe (input[1] >= '0' && input[1] <= '9' ? input[1] - '0' : 2), "utf8", "iso-8859-2")
                 );
     }
-    else if (buf[0] == '@')
+    else if (input[0] == '@')
     {
         insert (text_buffer->end (), 
                 Glib::convert (
-                    player->info (buf[1] >= '0' && buf[1] <= '9' ? buf[1] - '0' : 4), "utf8", "iso-8859-2")
+                    player->info (input[1] >= '0' && input[1] <= '9' ? input[1] - '0' : 4), "utf8", "iso-8859-2")
                 );
     }
-    else if (buf[0] == ':')
+    else if (input[0] == ':')
     {
-        buf = buf.substr (1, buf.size () - 1);
-        player2->parser (Glib::convert (buf, "iso-8859-2", "utf8"));
+        input = input.substr (1, input.size () - 1);
+        player2->parser (Glib::convert (input, "iso-8859-2", "utf8"));
     }
     else
 #endif  // __DEBUG__
-    if (buf == "q")
+    if (input == "q")
     {
         hide ();
     }
     else
     {
-        player->parser (Glib::convert (buf, "iso-8859-2", "utf8"));
+        player->parser (Glib::convert (input, "iso-8859-2", "utf8"));
     }
     update_text_buffer ();
     entry->set_text ("");
@@ -818,34 +823,70 @@ void CApp::run ()
     
     player->parser (CCreature::CMD_LOOK);
 
-    char buf[256]; // input buffer
-    //std::string input;
+    std::string input;
     bool end = false;
     do
     {
         // writing prompt
-        std::cout << C_PROMPT << "$ " << C_RST;
+        std::cout << C_PROMPT << "$ " << C_CMD;
         std::cout.flush ();
-        std::cout << C_CMD;
-        /*input.clear ();
+
+        input.clear ();
+        std::cin.clear ();
         char c = 0;
+        struct pollfd fds = 
+        {
+            0,          // file descriptor of STDIN
+            POLLIN,     // watch event: input
+            0           // occured event, filled by poll()
+        };
+        int i = 0;
+        const char BACKSPACE = 127;
         do 
         {
-            while (std::cin.rdbuf ()->in_avail () > 0 && c != '\n')
+            while (poll (&fds, 1, 10)) // watch 1 fd, timeout 10 ms
+                //&& std::cin.rdbuf ()->in_avail () > 0)
             {
-                c = std::cin.get ();
-                if (c != '\n')
+                std::cin.get (c);
+                std::cout << c;
+                std::cout.flush ();
+                if (c == BACKSPACE)
+                {
+                    if (input.size ())
+                    {
+                        input.erase (input.size () - 1);
+                        std::cout << '\b' << ' ' << '\b';
+                        std::cout.flush ();
+                    }
+                }
+                else if (c != '\n') // return
+                {
                     input += c;
+                }
             }
-            usleep (1000);
-            if (player->parent != NULL)
-                player->parent->do_something ();
-        } while (c != '\n');*/
-        // getting a line from standard input
-        std::cin.getline (buf, sizeof (buf));
+            if (i++ > 50)
+            {
+                // call do_something() in every 500 ms
+                do_something ();
+                i = 0;
+#ifdef __DEBUG__
+                std::string player2_out = player2_os.str ();
+                if (player2_out.size () > 0) 
+                {
+                    std::cout << "###### " << player2->get_name () << std::endl;
+                    CSplit split;
+                    CStringVector sv = split ("\\n", player2_out, RE_DEFAULT | RE_NEWLINE | RE_NOTEOL);
+                    for (unsigned int i = 0; i < sv.size (); i++)
+                        std::cout << "# " << sv[i] << std::endl;
+                    std::cout << "######" << std::endl;
+                    player2_os.str ("");
+                }
+#endif  // __DEBUG__
+            }
+        } while (c != '\n');
+        // get a line from standard input
         std::cout << C_RST;
-        if ((std::string) buf == "q" || std::cin.eof ())
-        //if (input == "q" || std::cin.eof ())
+        if (input == "q" || std::cin.eof ())
         {
             // exiting if end of file or typed 'q'
 #if (LANG == ENG)
@@ -859,37 +900,24 @@ void CApp::run ()
         else
         {
 #ifdef __DEBUG__
-            if (buf[0] == '!')
+            if (input[0] == '!')
             {
-                std::cout << show_universe (buf[1] >= '0' && buf[1] <= '9' ? buf[1] - '0' : 2);
+                std::cout << show_universe (input[1] >= '0' && input[1] <= '9' ? input[1] - '0' : 2);
             }
-            else if (buf[0] == '@')
+            else if (input[0] == '@')
             {
-                std::cout << player->info (buf[1] >= '0' && buf[1] <= '9' ? buf[1] - '0' : 4) << std::endl;
+                std::cout << player->info (input[1] >= '0' && input[1] <= '9' ? input[1] - '0' : 4) << std::endl;
             }
-            else if (buf[0] == ':') // control second player
+            else if (input[0] == ':') // control second player
             {
-                //buf = buf.substr (1, buf.size () - 1);
-                buf[0] = ' ';
-                player2->parser (buf);
+                //input = input.substr (1, input.size () - 1);
+                input.erase (0, 1);
+                player2->parser (input);
             }
             else
 #endif  // __DEBUG__
             // otherwise forwarding command to parser
-            player->parser (buf);
-#ifdef __DEBUG__
-            std::string player2_out = player2_os.str ();
-            if (player2_out.size () > 0) 
-            {
-                std::cout << "###### " << player2->get_name () << std::endl;
-                CSplit split;
-                CStringVector sv = split ("\\n", player2_out, RE_DEFAULT | RE_NEWLINE | RE_NOTEOL);
-                for (unsigned int i = 0; i < sv.size (); i++)
-                    std::cout << "# " << sv[i] << std::endl;
-                std::cout << "######" << std::endl;
-                player2_os.str ("");
-            }
-#endif  // __DEBUG__
+            player->parser (input);
         }
     } while (!end);
 }
